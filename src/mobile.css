@@ -1,0 +1,54 @@
+/* Mobile-First Grid System */
+.grid-responsive {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+}
+
+@media (min-width: 640px) {
+    .grid-2 {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .grid-3 {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    .col-span-2 {
+        grid-column: span 2;
+    }
+}
+
+/* Mobile Adjustments */
+@media (max-width: 640px) {
+    .hide-on-mobile {
+        display: none !important;
+    }
+
+    .card {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        /* Make cards full bleed on mobile for max space */
+    }
+
+    .btn {
+        width: 100%;
+        /* Full width buttons for easy tapping */
+        padding: 1rem;
+    }
+
+    .input-group label {
+        font-size: 0.95rem;
+    }
+
+    input,
+    select {
+        font-size: 16px !important;
+        /* Prevents iOS auto-zoom */
+        padding-top: 12px;
+        padding-bottom: 12px;
+    }
+}
