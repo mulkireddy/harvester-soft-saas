@@ -2,12 +2,15 @@
 .grid-responsive {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 1rem;
+    gap: 0.75rem;
+    /* Standard mobile gap (12px) */
 }
 
 @media (min-width: 640px) {
     .grid-2 {
         grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        /* Restore larger gap for desktop */
     }
 
     .grid-3 {
@@ -275,14 +278,29 @@
 
     /* Standardize Cards */
     .card {
-        padding: 1rem;
+        padding: 1rem !important;
         border-radius: var(--radius-md);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        /* Softer shadow for mobile */
+    }
+
+    /* Tighter Headers */
+    h1 {
+        font-size: 1.5rem !important;
+        margin-bottom: 0.5rem !important;
+        /* Visual hierarchy */
+    }
+
+    header {
+        margin-bottom: 1.25rem !important;
+        /* Reduce gap before content */
     }
 
     /* Full Width Inputs/Buttons */
     .btn {
         width: 100%;
-        padding: 0.875rem;
+        padding: 0.75rem;
+        /* Slightly less than 0.875rem for compactness */
         min-height: 44px;
     }
 
@@ -290,12 +308,22 @@
     select:not(.input-compact),
     textarea:not(.input-compact) {
         font-size: 16px !important;
+        /* Prevent zoom on focus */
         min-height: 44px;
+        /* Standard touch target */
     }
 
+    /* High Density Form Mode */
     .input-compact {
-        min-height: 34px !important;
+        min-height: 38px !important;
         font-size: 14px !important;
-        padding: 0.4rem !important;
+        padding: 0.35rem 0.6rem !important;
+        border-radius: 8px !important;
+    }
+
+    .btn-sm {
+        min-height: 38px !important;
+        padding: 0 1rem !important;
+        font-size: 0.85rem !important;
     }
 }

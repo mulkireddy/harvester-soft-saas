@@ -168,12 +168,12 @@ const Dashboard: React.FC = () => {
                             <Sparkles size={24} fill="currentColor" />
                         </div>
                         <div>
-                            <div style={{ fontWeight: 600, fontSize: '1.1rem' }}>Predictive Forecast</div>
-                            <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>Based on your current pace, you are on track to hit a new milestone this month.</div>
+                            <div style={{ fontWeight: 600, fontSize: '1.1rem' }}>Revenue Projection</div>
+                            <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>Estimated month-end close based on current daily average.</div>
                         </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '0.8rem', opacity: 0.8, textTransform: 'uppercase' }}>Projected Revenue</div>
+                        <div style={{ fontSize: '0.8rem', opacity: 0.8, textTransform: 'uppercase' }}>Projected</div>
                         <div style={{ fontSize: '1.75rem', fontWeight: 700 }}>₹ {stats.forecastRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
                     </div>
                 </div>
