@@ -377,107 +377,74 @@ const FarmersPage: React.FC = () => {
                     )}
 
                     <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
-                        {/* Row 1: Basic Info */}
-                        <div className="grid-responsive grid-2" style={{ marginBottom: '1rem' }}>
-                            <div className="input-group">
-                                <label className="label">Mobile Number</label>
-                                <div style={{ position: 'relative' }}>
-                                    <Phone size={18} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-secondary)' }} />
-                                    <input
-                                        type="tel"
-                                        className="input"
-                                        placeholder="Mobile"
-                                        style={{ paddingLeft: '2.5rem', width: '100%' }}
-                                        value={mobile}
-                                        onChange={(e) => setMobile(e.target.value)}
-                                        onBlur={checkMobile}
-                                    />
-                                </div>
-                                {existingFarmerId && <span style={{ fontSize: '0.75rem', color: 'var(--secondary)' }}>✓ Found existing</span>}
+                        {/* Row 1: Who (Mobile & Name) */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.8fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                            <div className="input-group" style={{ marginBottom: 0 }}>
+                                <label className="label" style={{ fontSize: '0.75rem' }}>Mobile</label>
+                                <input
+                                    type="tel"
+                                    className="input"
+                                    placeholder="98765..."
+                                    style={{ padding: '0.6rem', fontSize: '0.9rem' }}
+                                    value={mobile}
+                                    onChange={(e) => setMobile(e.target.value)}
+                                    onBlur={checkMobile}
+                                />
                             </div>
-
-                            <div className="input-group">
-                                <label className="label">Farmer Name</label>
+                            <div className="input-group" style={{ marginBottom: 0 }}>
+                                <label className="label" style={{ fontSize: '0.75rem' }}>Farmer Name</label>
                                 <div style={{ position: 'relative' }}>
-                                    <User size={18} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-secondary)' }} />
                                     <input
                                         type="text"
                                         className="input"
                                         placeholder="Name"
-                                        style={{ paddingLeft: '2.5rem', width: '100%' }}
+                                        style={{ padding: '0.6rem', fontSize: '0.9rem', width: '100%' }}
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
                                     />
+                                    {existingFarmerId && <Check size={14} color="var(--primary)" style={{ position: 'absolute', right: '8px', top: '10px' }} />}
                                 </div>
                             </div>
                         </div>
 
-                        {/* Row 2: Location & Crop & Date */}
-                        <div className="grid-responsive grid-3" style={{ marginBottom: '1rem' }}>
-                            <div className="input-group">
-                                <label className="label">Village / Place</label>
-                                <div style={{ position: 'relative' }}>
-                                    <MapPin size={18} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-secondary)' }} />
-                                    <input
-                                        type="text"
-                                        className="input"
-                                        placeholder="Village"
-                                        style={{ paddingLeft: '2.5rem', width: '100%' }}
-                                        value={place}
-                                        onChange={(e) => setPlace(e.target.value)}
-                                    />
-                                </div>
-                                {historyPlaces.length > 0 && (
-                                    <div style={{ display: 'flex', gap: '6px', marginTop: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
-                                        {historyPlaces.map(p => (
-                                            <button
-                                                key={p}
-                                                type="button"
-                                                onClick={() => setPlace(p)}
-                                                style={{
-                                                    padding: '2px 8px', fontSize: '0.7rem', fontWeight: 600,
-                                                    background: '#F3F4F6', borderRadius: '12px',
-                                                    border: '1px solid #E5E7EB', color: '#4B5563', whiteSpace: 'nowrap'
-                                                }}
-                                            >
-                                                {p}
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
+                        {/* Row 2: Where & What (Place, Crop, Date) - TIGHT GRID */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                            <div className="input-group" style={{ marginBottom: 0 }}>
+                                <label className="label" style={{ fontSize: '0.75rem' }}>Village</label>
+                                <input
+                                    type="text"
+                                    className="input"
+                                    placeholder="Village"
+                                    style={{ padding: '0.6rem', fontSize: '0.9rem' }}
+                                    value={place}
+                                    onChange={(e) => setPlace(e.target.value)}
+                                />
                             </div>
-                            <div className="input-group">
-                                <label className="label">Crop Type</label>
-                                <div style={{ position: 'relative' }}>
-                                    <Sprout size={18} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-secondary)' }} />
-                                    <input
-                                        type="text"
-                                        className="input"
-                                        placeholder="Crop"
-                                        style={{ paddingLeft: '2.5rem', width: '100%' }}
-                                        value={crop}
-                                        onChange={(e) => setCrop(e.target.value)}
-                                    />
-                                </div>
+                            <div className="input-group" style={{ marginBottom: 0 }}>
+                                <label className="label" style={{ fontSize: '0.75rem' }}>Crop</label>
+                                <input
+                                    type="text"
+                                    className="input"
+                                    placeholder="Crop"
+                                    style={{ padding: '0.6rem', fontSize: '0.9rem' }}
+                                    value={crop}
+                                    onChange={(e) => setCrop(e.target.value)}
+                                />
                             </div>
-                            <div className="input-group">
-                                <label className="label">Job Date</label>
-                                <div style={{ position: 'relative' }}>
-                                    <Calendar size={18} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-secondary)' }} />
-                                    <input
-                                        type="date"
-                                        className="input"
-                                        style={{ paddingLeft: '2.5rem', width: '100%' }}
-                                        value={jobDate}
-                                        onChange={(e) => setJobDate(e.target.value)}
-                                    />
-                                </div>
+                            <div className="input-group" style={{ marginBottom: 0 }}>
+                                <label className="label" style={{ fontSize: '0.75rem' }}>Date</label>
+                                <input
+                                    type="date"
+                                    className="input"
+                                    style={{ padding: '0.6rem', fontSize: '0.85rem', width: '100%' }}
+                                    value={jobDate}
+                                    onChange={(e) => setJobDate(e.target.value)}
+                                />
                             </div>
                         </div>
 
-                        {/* Row 2.5: Machine Selection */}
-                        <div className="input-group" style={{ marginBottom: '1rem' }}>
-                            <label className="label">Select Machine</label>
+                        {/* Row 3: Machine & Billing (Merged) */}
+                        <div className="input-group" style={{ marginBottom: '0.75rem' }}>
                             <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '4px' }}>
                                 {machines.map(m => (
                                     <button
@@ -487,7 +454,8 @@ const FarmersPage: React.FC = () => {
                                         style={{
                                             border: selectedMachine === m.id ? 'none' : '1px solid var(--border-light)',
                                             color: selectedMachine === m.id ? 'white' : 'var(--text-main)',
-                                            padding: '0.4rem 0.8rem', fontSize: '0.8rem', whiteSpace: 'nowrap'
+                                            padding: '0.4rem 0.8rem', fontSize: '0.75rem', whiteSpace: 'nowrap',
+                                            borderRadius: '20px'
                                         }}
                                         onClick={() => setSelectedMachine(m.id)}
                                     >
@@ -497,132 +465,96 @@ const FarmersPage: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Row 3: Billing Toggle (Compact) */}
-                        <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <label className="label" style={{ margin: 0 }}>Billing:</label>
-                            <div style={{
-                                display: 'inline-flex',
-                                background: 'var(--bg-main)',
-                                padding: '2px',
-                                borderRadius: 'var(--radius-md)',
-                                border: '1px solid var(--border-light)'
-                            }}>
-                                <button
-                                    type="button"
-                                    className={`btn ${billingMode === 'acre' ? 'btn-white shadow' : ''}`}
-                                    style={{
-                                        backgroundColor: billingMode === 'acre' ? '#FFFFFF' : 'transparent',
-                                        color: billingMode === 'acre' ? 'var(--primary)' : 'var(--text-secondary)',
-                                        boxShadow: billingMode === 'acre' ? 'var(--shadow-sm)' : 'none',
-                                        padding: '0.3rem 0.8rem',
-                                        fontSize: '0.8rem',
-                                        borderRadius: 'var(--radius-sm)',
-                                        transition: 'all 0.2s ease'
-                                    }}
-                                    onClick={() => setBillingMode('acre')}
-                                >
-                                    Per Acre
-                                </button>
-                                <button
-                                    type="button"
-                                    className={`btn ${billingMode === 'hour' ? 'btn-white shadow' : ''}`}
-                                    style={{
-                                        backgroundColor: billingMode === 'hour' ? '#FFFFFF' : 'transparent',
-                                        color: billingMode === 'hour' ? 'var(--primary)' : 'var(--text-secondary)',
-                                        boxShadow: billingMode === 'hour' ? 'var(--shadow-sm)' : 'none',
-                                        padding: '0.3rem 0.8rem',
-                                        fontSize: '0.8rem',
-                                        borderRadius: 'var(--radius-sm)',
-                                        transition: 'all 0.2s ease'
-                                    }}
-                                    onClick={() => setBillingMode('hour')}
-                                >
-                                    Hourly
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Row 4: Calculation Inputs */}
-                        <div className="grid-responsive grid-3" style={{ alignItems: 'end', marginBottom: '1.5rem', gap: '1rem' }}>
-                            <div className="input-group">
-                                <label className="label">
-                                    {billingMode === 'acre' ? 'Total Acres' : 'Total Hours'}
+                        {/* Row 4: Pricing (Qty + Rate = Total) - SUPER COMPACT */}
+                        <div style={{
+                            display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', gap: '0.5rem', marginBottom: '1rem',
+                            background: '#F9FAFB', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-light)'
+                        }}>
+                            <div className="input-group" style={{ marginBottom: 0 }}>
+                                <label className="label" style={{ fontSize: '0.7rem' }}>
+                                    <span onClick={() => setBillingMode(billingMode === 'acre' ? 'hour' : 'acre')} style={{ borderBottom: '1px dashed #999', cursor: 'pointer' }}>
+                                        {billingMode === 'acre' ? 'Acres' : 'Hours'}
+                                    </span>
                                 </label>
                                 <input
                                     type="number"
                                     className="input"
                                     step="0.1"
-                                    placeholder="0.0"
-                                    style={{ width: '100%' }}
+                                    placeholder="0"
+                                    style={{ padding: '0.5rem', textAlign: 'center', fontWeight: 600 }}
                                     value={measurement}
                                     onChange={(e) => setMeasurement(Number(e.target.value))}
                                 />
                             </div>
 
-                            <div className="input-group">
-                                <label className="label">
-                                    Rate
-                                </label>
+                            <div className="input-group" style={{ marginBottom: 0 }}>
+                                <label className="label" style={{ fontSize: '0.7rem' }}>Rate</label>
                                 <input
                                     type="number"
                                     className="input"
-                                    placeholder="Rate"
-                                    style={{ width: '100%' }}
+                                    placeholder="0"
+                                    style={{ padding: '0.5rem', textAlign: 'center' }}
                                     value={rate}
                                     onChange={(e) => setRate(Number(e.target.value))}
                                 />
                             </div>
 
-                            {/* Total Display */}
-                            <div style={{
-                                background: '#FFF0F3',
-                                padding: '0.5rem 0.75rem',
-                                borderRadius: 'var(--radius-md)',
-                                border: '1px dashed var(--primary)',
-                                textAlign: 'right', marginBottom: '0.8rem'
-                            }}>
-                                <span style={{ display: 'block', fontSize: '0.65rem', color: 'var(--primary)', fontWeight: 600, textTransform: 'uppercase' }}>Total Amount</span>
-                                <span style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--primary)' }}>
-                                    ₹ {total.toLocaleString()}
-                                </span>
+                            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-end', paddingLeft: '0.5rem', borderLeft: '1px solid #E5E7EB' }}>
+                                <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Total</span>
+                                <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary)' }}>₹{total.toLocaleString()}</span>
                             </div>
                         </div>
 
-                        {/* Payment Traffic Light - Compact */}
-                        <div style={{ marginBottom: '2rem', padding: '1rem', background: '#F9FAFB', borderRadius: '12px', border: '1px solid var(--border-light)' }}>
-                            <label className="label" style={{ marginBottom: '0.5rem', display: 'block', fontSize: '0.85rem' }}>Payment Status</label>
-                            <div className="grid-responsive grid-3" style={{ gap: '0.5rem', marginBottom: '1rem' }}>
-                                <button type="button" onClick={() => setPaymentType('Pending')} style={{ padding: '0.5rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600, border: paymentType === 'Pending' ? '2px solid #EF4444' : '1px solid #E5E7EB', background: paymentType === 'Pending' ? '#FEF2F2' : 'white', color: paymentType === 'Pending' ? '#EF4444' : '#6B7280' }}>Pending</button>
-                                <button type="button" onClick={() => setPaymentType('Partial')} style={{ padding: '0.5rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600, border: paymentType === 'Partial' ? '2px solid #F59E0B' : '1px solid #E5E7EB', background: paymentType === 'Partial' ? '#FFFBEB' : 'white', color: paymentType === 'Partial' ? '#F59E0B' : '#6B7280' }}>Partial</button>
-                                <button type="button" onClick={() => setPaymentType('Paid')} style={{ padding: '0.5rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600, border: paymentType === 'Paid' ? '2px solid #10B981' : '1px solid #E5E7EB', background: paymentType === 'Paid' ? '#ECFDF5' : 'white', color: paymentType === 'Paid' ? '#10B981' : '#6B7280' }}>Full Paid</button>
+                        {/* Row 5: Payment (Compact Traffic Light) */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '1rem' }}>
+                            <div style={{ display: 'flex', background: '#F3F4F6', padding: '3px', borderRadius: '8px', flex: 1 }}>
+                                {(['Pending', 'Partial', 'Paid'] as const).map((status) => (
+                                    <button
+                                        key={status}
+                                        type="button"
+                                        onClick={() => setPaymentType(status)}
+                                        style={{
+                                            flex: 1,
+                                            padding: '0.4rem',
+                                            fontSize: '0.75rem',
+                                            fontWeight: 600,
+                                            borderRadius: '6px',
+                                            background: paymentType === status ? 'white' : 'transparent',
+                                            color: paymentType === status ? (status === 'Pending' ? '#EF4444' : (status === 'Paid' ? '#10B981' : '#F59E0B')) : '#6B7280',
+                                            boxShadow: paymentType === status ? '0 1px 2px rgba(0,0,0,0.1)' : 'none',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        {status}
+                                    </button>
+                                ))}
                             </div>
 
+                            {/* Quick Pay Input (Only if not Pending) */}
                             {paymentType !== 'Pending' && (
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                    <div className="input-group">
-                                        <label className="label">Amount Paid</label>
-                                        <input type="number" className="input" placeholder="0" value={paidAmount} onChange={(e) => setPaidAmount(Number(e.target.value))} readOnly={paymentType === 'Paid'} />
-                                    </div>
-                                    <div className="input-group">
-                                        <label className="label">Method</label>
-                                        <select className="input" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
-                                            <option value="Cash">Cash</option>
-                                            <option value="Online">Online</option>
-                                        </select>
-                                    </div>
+                                <div style={{ flex: 0.7 }}>
+                                    <input
+                                        type="number"
+                                        className="input"
+                                        placeholder="Paid"
+                                        value={paidAmount}
+                                        onChange={e => setPaidAmount(Number(e.target.value))}
+                                        style={{ padding: '0.4rem', fontSize: '0.9rem', height: '34px' }}
+                                        readOnly={paymentType === 'Paid'}
+                                    />
                                 </div>
                             )}
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                            <button type="button" onClick={() => setShowForm(false)} className="btn btn-secondary">Cancel</button>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border-light)' }}>
+                            <button type="button" onClick={() => setShowForm(false)} className="btn btn-secondary btn-sm" style={{ border: 'none' }}>Cancel</button>
                             <button
                                 type="submit"
-                                className="btn btn-primary"
-                                style={{ paddingLeft: '2rem', paddingRight: '2rem' }}
+                                className="btn btn-primary btn-sm"
+                                style={{ padding: '0.5rem 2rem', fontSize: '0.9rem' }}
                                 disabled={isSaving}
                             >
-                                {isSaving ? <Loader2 className="animate-spin" size={20} /> : 'Save Record'}
+                                {isSaving ? <Loader2 className="animate-spin" size={16} /> : 'Save Entry'}
                             </button>
                         </div>
                     </form>
