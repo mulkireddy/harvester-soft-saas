@@ -180,7 +180,7 @@ const Dashboard: React.FC = () => {
             )}
 
             {/* Stats Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
+            <div className="stats-grid">
 
                 {/* Total Collected */}
                 <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
