@@ -32,6 +32,11 @@ const JobCard: React.FC<JobCardProps> = ({ job, onShare, onEdit, onDelete, onPay
                     <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--primary)' }}>
                         ₹{job.total_amount.toLocaleString()}
                     </div>
+                    {job.status === 'Partial' && (
+                        <div style={{ fontSize: '0.7rem', color: '#DC2626', fontWeight: 500 }}>
+                            Bal: ₹{(job.total_amount - (job.paid_amount || 0)).toLocaleString()}
+                        </div>
+                    )}
                     <div style={{
                         fontSize: '0.7rem', fontWeight: 600,
                         color: job.status === 'Paid' ? '#166534' : (job.status === 'Partial' ? '#D97706' : '#DC2626'),

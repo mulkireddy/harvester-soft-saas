@@ -61,9 +61,11 @@ const FarmersPage: React.FC = () => {
     // Auto-fill logic for Traffic Light
     useEffect(() => {
         if (paymentType === 'Paid') {
-            setPaidAmount(total);
+            setPaidAmount(total); // Auto-fill full amount internally
         } else if (paymentType === 'Pending') {
             setPaidAmount('');
+        } else if (paymentType === 'Partial') {
+            setPaidAmount(''); // Clear it so user can type freely without deleting '0'
         }
     }, [paymentType, total]);
 
@@ -544,17 +546,17 @@ const FarmersPage: React.FC = () => {
                                 ))}
                             </div>
 
-                            {/* Quick Pay Input (Only if not Pending) */}
-                            {paymentType !== 'Pending' && (
-                                <div style={{ flex: 0.7 }}>
+                            {/* Quick Pay Input (Only if Partial) */}
+                            {paymentType === 'Partial' && (
+                                <div style={{ flex: 0.7, animation: 'fadeIn 0.2s' }}>
                                     <input
                                         type="number"
                                         className="input input-compact"
-                                        placeholder="Paid"
+                                        placeholder="Enter Amount"
                                         value={paidAmount}
-                                        onChange={e => setPaidAmount(Number(e.target.value))}
-                                        style={{ padding: '0.4rem', fontSize: '0.9rem', height: '34px' }}
-                                        readOnly={paymentType === 'Paid'}
+                                        onChange={e => setPaidAmount(e.target.value === '' ? '' : Number(e.target.value))}
+                                        style={{ padding: '0.4rem', fontSize: '0.9rem', height: '34px', width: '100%' }}
+                                        autoFocus
                                     />
                                 </div>
                             )}
@@ -577,9 +579,9 @@ const FarmersPage: React.FC = () => {
 
 
             {/* Recent Records Layout Fix */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'nowrap' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', gap: '1rem' }}>
                 <h3 style={{ margin: 0, fontSize: '1.1rem', whiteSpace: 'nowrap' }}>Recent Records</h3>
-                <button className="btn btn-secondary" onClick={() => setShowHistory(true)} style={{ fontSize: '0.75rem', padding: '0.3rem 0.6rem', height: 'auto', minHeight: '32px' }}>
+                <button className="btn btn-secondary" onClick={() => setShowHistory(true)} style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', height: 'auto', whiteSpace: 'nowrap' }}>
                     View All
                 </button>
             </div>
