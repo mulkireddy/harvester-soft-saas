@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 
 
-import { User, Users, Clock, Loader2, History, X, Check } from 'lucide-react';
+import { User, Users, Loader2, History, X, Check, Download } from 'lucide-react';
 import { supabase } from '../supabase';
 import PaymentModal from '../components/PaymentModal';
 import EditJobModal from '../components/EditJobModal';
@@ -292,45 +292,77 @@ const FarmersPage: React.FC = () => {
         }
     };
 
+    const handleExport = () => {
+        if (!recentJobs.length) return alert('No data to export');
+
+        const headers = ['Date', 'Farmer', 'Village', 'Mobile', 'Crop', 'Machine', 'Mode', 'Qty', 'Rate', 'Total', 'Paid', 'Status'];
+        const csvContent = [
+            headers.join(','),
+            ...recentJobs.map(j => [
+                new Date(j.date).toLocaleDateString(),
+                `"${j.farmers?.name || ''}"`,
+                `"${j.farmers?.place || ''}"`,
+                j.farmers?.mobile || '',
+                j.crop || '',
+                j.machines?.name || '',
+                j.billing_mode,
+                j.quantity,
+                j.rate,
+                j.total_amount,
+                j.paid_amount,
+                j.status
+            ].join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `harvester_jobs_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+    };
+
     return (
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-            <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <header style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
-                    <h1 style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>Farmers & Jobs</h1>
-                    <p style={{ color: 'var(--text-secondary)' }}>Add new work records or manage existing farmers.</p>
+                    {/* Mobile optimization: Smaller title, tighter subtitle */}
+                    <h1 style={{ fontSize: '1.5rem', marginBottom: '0.25rem', fontWeight: 700 }}>Farmers & Jobs</h1>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Manage records</span>
+                        {/* Integrated "Today" Badge inline for space saving */}
+                        <div style={{
+                            padding: '2px 8px', borderRadius: '12px', background: '#F0FDF4', color: '#15803D',
+                            fontSize: '0.75rem', fontWeight: 700, border: '1px solid #BBF7D0'
+                        }}>
+                            Today: {
+                                recentJobs
+                                    .filter(j => new Date(j.date).toDateString() === new Date().toDateString())
+                                    .reduce((sum, j) => sum + (j.billing_mode === 'acre' ? Number(j.quantity) : 0), 0)
+                                    .toFixed(1)
+                            } Ac
+                        </div>
+                    </div>
                 </div>
-                <button className="btn btn-secondary">Export List</button>
+
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button onClick={handleExport} className="icon-btn" title="Export CSV" style={{ background: '#F3F4F6', color: '#4B5563' }}>
+                        <Download size={20} />
+                    </button>
+                    <button
+                        onClick={() => setShowForm(!showForm)}
+                        className="btn btn-primary"
+                        style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', borderRadius: '8px', minHeight: '40px' }}
+                    >
+                        {showForm ? 'Cancel' : 'New Entry'}
+                    </button>
+                </div>
             </header>
 
-            {/* Daily Summary & Actions */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <div style={{
-                    padding: '0.5rem 1rem',
-                    borderRadius: '50px',
-                    background: '#F0FDF4',
-                    border: '1px solid #BBF7D0',
-                    color: '#15803D',
-                    fontSize: '0.85rem',
-                    fontWeight: 700,
-                    display: 'flex', alignItems: 'center', gap: '8px',
-                }}>
-                    <Clock size={16} />
-                    <span>Today: {
-                        recentJobs
-                            .filter(j => new Date(j.date).toDateString() === new Date().toDateString())
-                            .reduce((sum, j) => sum + (j.billing_mode === 'acre' ? Number(j.quantity) : 0), 0)
-                            .toFixed(1)
-                    } Ac</span>
-                </div>
+            {/* Replaced old "Today" summary section (now integrated above) with invisible spacer if needed, or just nothing.
+                Actually, let's keep the Form Toggle here if we want? No, moved to header right.
+            */}
 
-                <button
-                    onClick={() => setShowForm(!showForm)}
-                    className="btn btn-primary"
-                    style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', borderRadius: '50px' }}
-                >
-                    {showForm ? 'Cancel' : <><User size={18} style={{ marginRight: '6px' }} /> New Entry</>}
-                </button>
-            </div>
 
             {/* New Record Card (Collapsible) */}
             {showForm && (
@@ -540,11 +572,11 @@ const FarmersPage: React.FC = () => {
             )}
 
 
-            {/* Placeholder for List */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h3 style={{ margin: 0 }}> Recent Records</h3>
-                <button className="btn btn-secondary" onClick={() => setShowHistory(true)} style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}>
-                    <History size={16} style={{ marginRight: '6px' }} /> View All History
+            {/* Recent Records Layout Fix */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'nowrap' }}>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', whiteSpace: 'nowrap' }}>Recent Records</h3>
+                <button className="btn btn-secondary" onClick={() => setShowHistory(true)} style={{ fontSize: '0.75rem', padding: '0.3rem 0.6rem', height: 'auto', minHeight: '32px' }}>
+                    View All
                 </button>
             </div>
 
