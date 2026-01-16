@@ -179,7 +179,7 @@ const ExpensesPage: React.FC = () => {
                         </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1.5rem' }}>
+                    <div className="grid-responsive grid-2" style={{ gap: '1rem', marginTop: '1.5rem' }}>
                         <div className="input-group">
                             <label className="label">Date</label>
                             <input

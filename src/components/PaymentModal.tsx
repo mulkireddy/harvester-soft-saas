@@ -92,7 +92,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ job, onClose, onSuccess }) 
             display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
             backdropFilter: 'blur(2px)'
         }}>
-            <div className="card" style={{ width: '100%', maxWidth: '450px', padding: '0', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+            <div className="card modal-content" style={{ width: '100%', maxWidth: '450px', padding: '0', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
                 <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <h3 style={{ fontSize: '1.25rem' }}>Record Payment</h3>
                     <button onClick={onClose}><X size={20} color="var(--text-secondary)" /></button>

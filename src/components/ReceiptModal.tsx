@@ -74,7 +74,7 @@ const ReceiptModal: React.FC<ReceiptModalProps> = ({ job, onClose }) => {
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
             padding: '1rem'
         }}>
-            <div style={{ position: 'relative', width: '100%', maxWidth: '400px' }}>
+            <div className="modal-content" style={{ position: 'relative', width: '100%', maxWidth: '400px' }}>
                 {/* Actions Header */}
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginBottom: '1rem' }}>
                     <button onClick={onClose} style={{ padding: '0.5rem', background: 'white', borderRadius: '50%', border: 'none', cursor: 'pointer' }}>

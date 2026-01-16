@@ -92,7 +92,7 @@ const EditJobModal: React.FC<EditJobModalProps> = ({ job, onClose, onSuccess, ma
             zIndex: 1000,
             padding: '1rem'
         }}>
-            <div className="card" style={{ width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto', padding: '0' }}>
+            <div className="card modal-content" style={{ width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto', padding: '0' }}>
                 <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Edit Record</h2>
                     <button onClick={onClose} style={{ color: 'var(--text-secondary)' }}><X size={24} /></button>

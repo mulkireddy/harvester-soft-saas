@@ -19,36 +19,253 @@
     }
 }
 
-/* Mobile Adjustments */
-@media (max-width: 640px) {
+/* --- Responsive Layout System --- */
+
+.layout-container {
+    display: flex;
+    min-height: 100vh;
+    background-color: var(--bg-main);
+}
+
+/* Sidebar (Desktop) */
+.desktop-sidebar {
+    width: 260px;
+    background-color: #FFFFFF;
+    border-right: 1px solid var(--border-light);
+    padding: 2rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-weight: 400;
+    transition: all 0.2s ease;
+}
+
+.nav-item.active {
+    background-color: #FFF0F3;
+    /* Soft red bg */
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.nav-item:hover:not(.active) {
+    background-color: #f5f5f5;
+    color: var(--text-main);
+}
+
+/* Main Content Area */
+.main-content {
+    flex: 1;
+    padding: 2.5rem 3rem;
+}
+
+/* Mobile Header & Nav (Hidden by default on Desktop) */
+.mobile-header {
+    display: none;
+}
+
+.mobile-bottom-nav {
+    display: none;
+}
+
+/* Job Card Desktop Defaults */
+.job-card-container {
+    padding: 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.job-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+}
+
+.icon-btn {
+    border: none;
+    background: #f3f4f6;
+    color: #4b5563;
+    border-radius: 8px;
+    padding: 0.4rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.primary-action-btn {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    background: #FFF0F3;
+    color: var(--primary);
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.show-on-mobile {
+    display: none;
+}
+
+/* --- Mobile Styles (< 768px) --- */
+@media (max-width: 768px) {
+    .layout-container {
+        flex-direction: column;
+    }
+
+    .desktop-sidebar {
+        display: none;
+        /* Hide sidebar */
+    }
+
+    /* Mobile Header */
+    .mobile-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+        background-color: #FFFFFF;
+        border-bottom: 1px solid var(--border-light);
+        position: sticky;
+        top: 0;
+        z-index: 50;
+    }
+
+    /* Main Content Adjustments */
+    .main-content {
+        padding: 1rem;
+        /* Smaller padding */
+        padding-bottom: 6rem;
+        /* Space for bottom nav */
+    }
+
+    /* Bottom Navigation */
+    .mobile-bottom-nav {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: #FFFFFF;
+        border-top: 1px solid var(--border-light);
+        padding-bottom: env(safe-area-inset-bottom);
+        /* iOS safe area */
+        z-index: 100;
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .mobile-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 0.75rem 0.25rem;
+        color: var(--text-secondary);
+        gap: 4px;
+        transition: color 0.2s ease;
+    }
+
+    .mobile-nav-item.active {
+        color: var(--primary);
+    }
+
+    /* Job Card Mobile Stacking */
+    .job-card-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .job-info {
+        width: 100%;
+        border-bottom: 1px dashed var(--border-light);
+        padding-bottom: 0.75rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .job-actions {
+        width: 100%;
+        align-items: center;
+        /* Center buttons or justify-between */
+        flex-direction: row;
+        justify-content: space-between;
+    }
+
+    .icon-btn {
+        padding: 0.6rem;
+        /* Larger touch target */
+        border-radius: 10px;
+    }
+
+    .primary-action-btn {
+        padding: 0.6rem 1.2rem;
+        font-size: 0.9rem;
+    }
+
+    .show-on-mobile {
+        display: block;
+    }
+
     .hide-on-mobile {
         display: none !important;
     }
 
+    /* Modals Response Fixes */
+    .modal-content {
+        width: 95% !important;
+        max-width: 95% !important;
+        padding: 1rem !important;
+        height: auto;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+}
+
+/* Global Mobile Fixes */
+@media (max-width: 640px) {
+
+    /* Standardize Cards */
     .card {
-        padding: 1rem;
-        margin-bottom: 1rem;
-        border-radius: 0;
-        border-left: none;
-        border-right: none;
-        /* Make cards full bleed on mobile for max space */
+        padding: 1.25rem;
+        border-radius: var(--radius-lg);
     }
 
+    /* Full Width Inputs/Buttons */
     .btn {
         width: 100%;
-        /* Full width buttons for easy tapping */
         padding: 1rem;
-    }
-
-    .input-group label {
-        font-size: 0.95rem;
+        min-height: 48px;
+        /* Touch target size */
     }
 
     input,
-    select {
+    select,
+    textarea {
         font-size: 16px !important;
-        /* Prevents iOS auto-zoom */
-        padding-top: 12px;
-        padding-bottom: 12px;
+        /* No zoom */
+        min-height: 44px;
+    }
+
+    /* Make tables scrollable horizontally if too wide */
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin-left: -1rem;
+        margin-right: -1rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
     }
 }

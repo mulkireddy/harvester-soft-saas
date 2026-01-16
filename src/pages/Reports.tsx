@@ -102,7 +102,7 @@ const Reports: React.FC = () => {
                 <p style={{ color: 'var(--text-secondary)' }}>Detailed breakdown of your business metrics.</p>
             </header>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
+            <div className="grid-responsive grid-2" style={{ gap: '1.5rem', marginBottom: '3rem' }}>
                 <div className="card" style={{ padding: '1.5rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
                         <div style={{ padding: '0.5rem', background: '#F3F4F6', borderRadius: '8px' }}><BarChart2 size={18} /></div>

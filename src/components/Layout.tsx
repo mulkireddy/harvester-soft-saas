@@ -2,6 +2,7 @@
 import React, { type ReactNode } from 'react';
 import { LayoutDashboard, Users, Receipt, Settings, BarChart2 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import '../mobile.css'; // Ensure mobile styles are imported
 
 interface LayoutProps {
     children: ReactNode;
@@ -19,19 +20,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     ];
 
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-main)' }}>
-            {/* Sidebar - Soft & Clean */}
-            <aside style={{
-                width: '260px',
-                backgroundColor: '#FFFFFF',
-                borderRight: '1px solid var(--border-light)',
-                padding: '2rem 1.5rem',
-                display: 'flex',
-                flexDirection: 'column',
-                position: 'sticky',
-                top: 0,
-                height: '100vh'
-            }}>
+        <div className="layout-container">
+            {/* Desktop Sidebar */}
+            <aside className="desktop-sidebar">
                 <div style={{ marginBottom: '3rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <div style={{ width: '32px', height: '32px', backgroundColor: 'var(--primary)', borderRadius: '8px' }}></div>
                     <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-main)' }}>HarvesterOS</h1>
@@ -44,17 +35,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                             <Link
                                 key={item.path}
                                 to={item.path}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '1rem',
-                                    padding: '0.75rem 1rem',
-                                    borderRadius: 'var(--radius-md)',
-                                    color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
-                                    backgroundColor: isActive ? '#FFF0F3' : 'transparent', // Soft red bg for active
-                                    fontWeight: isActive ? 600 : 400,
-                                    transition: 'background-color 0.2s ease, color 0.2s ease'
-                                }}
+                                className={`nav-item ${isActive ? 'active' : ''}`}
                             >
                                 <item.icon size={20} />
                                 {item.label}
@@ -64,10 +45,35 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </nav>
             </aside>
 
+            {/* Mobile Top Bar */}
+            <header className="mobile-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div style={{ width: '24px', height: '24px', backgroundColor: 'var(--primary)', borderRadius: '6px' }}></div>
+                    <h1 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)' }}>HarvesterOS</h1>
+                </div>
+            </header>
+
             {/* Main Content Area */}
-            <main style={{ flex: 1, padding: '2.5rem 3rem' }}>
+            <main className="main-content">
                 {children}
             </main>
+
+            {/* Mobile Bottom Navigation */}
+            <nav className="mobile-bottom-nav">
+                {navItems.map((item) => {
+                    const isActive = location.pathname === item.path;
+                    return (
+                        <Link
+                            key={item.path}
+                            to={item.path}
+                            className={`mobile-nav-item ${isActive ? 'active' : ''}`}
+                        >
+                            <item.icon size={24} strokeWidth={isActive ? 2.5 : 2} />
+                            <span style={{ fontSize: '0.7rem', fontWeight: isActive ? 600 : 500 }}>{item.label}</span>
+                        </Link>
+                    );
+                })}
+            </nav>
         </div>
     );
 };
