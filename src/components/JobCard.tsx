@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { MapPin, Sprout, Share2, Edit, Trash2, Phone, FileText } from 'lucide-react';
+import { Share2, Edit, Phone, FileText, Trash2 } from 'lucide-react';
 import '../mobile.css'; // Ensure mobile styles are available
 
 interface JobCardProps {
@@ -74,6 +74,9 @@ const JobCard: React.FC<JobCardProps> = ({ job, onShare, onEdit, onDelete, onPay
                     </button>
                     <button className="icon-btn" onClick={() => onEdit(job)} style={{ padding: '0.3rem', width: '28px', height: '28px', color: '#3B82F6', background: '#EFF6FF' }}>
                         <Edit size={14} />
+                    </button>
+                    <button className="icon-btn" onClick={() => onDelete(job.id)} style={{ padding: '0.3rem', width: '28px', height: '28px', color: '#EF4444', background: '#FEF2F2' }}>
+                        <Trash2 size={14} />
                     </button>
                 </div>
             </div>

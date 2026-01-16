@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 
 
-import { User, Users, Loader2, History, X, Check, Download } from 'lucide-react';
+import { Users, Loader2, X, Check, Download } from 'lucide-react';
 import { supabase } from '../supabase';
 import PaymentModal from '../components/PaymentModal';
 import EditJobModal from '../components/EditJobModal';
