@@ -11,6 +11,23 @@ const SettingsPage: React.FC = () => {
     const [newMachineName, setNewMachineName] = useState('');
     const [newMachineReg, setNewMachineReg] = useState('');
 
+    // Default Rates State
+    const [defaultAcreRate, setDefaultAcreRate] = useState('');
+    const [defaultHourRate, setDefaultHourRate] = useState('');
+
+    useEffect(() => {
+        const acre = localStorage.getItem('default_acre_rate');
+        const hour = localStorage.getItem('default_hour_rate');
+        if (acre) setDefaultAcreRate(acre);
+        if (hour) setDefaultHourRate(hour);
+    }, []);
+
+    const handleSaveRates = () => {
+        localStorage.setItem('default_acre_rate', defaultAcreRate);
+        localStorage.setItem('default_hour_rate', defaultHourRate);
+        alert('Default rates saved successfully!');
+    };
+
     useEffect(() => {
         fetchMachines();
     }, []);
@@ -141,11 +158,42 @@ const SettingsPage: React.FC = () => {
                 </div>
             </section>
 
-            {/* Default Rates (Placeholder for next feature) */}
-            <section className="card" style={{ opacity: 0.7 }}>
+            {/* Default Rates */}
+            <section className="card">
                 <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-light)' }}>
-                    <h2 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Default Rates (Coming Soon)</h2>
-                    <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Set default prices per acre/hour to auto-fill new records.</p>
+                    <h2 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Default Rates</h2>
+                    <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Set default prices to auto-fill when adding new records.</p>
+                </div>
+                <div style={{ padding: '1.5rem' }}>
+                    <div className="grid-responsive grid-2" style={{ gap: '1.5rem', marginBottom: '1.5rem' }}>
+                        <div className="input-group" style={{ marginBottom: 0 }}>
+                            <label className="label">Rate per Acre (₹)</label>
+                            <input
+                                type="number"
+                                className="input"
+                                placeholder="e.g. 2000"
+                                value={defaultAcreRate}
+                                onChange={(e) => setDefaultAcreRate(e.target.value)}
+                            />
+                        </div>
+                        <div className="input-group" style={{ marginBottom: 0 }}>
+                            <label className="label">Rate per Hour (₹)</label>
+                            <input
+                                type="number"
+                                className="input"
+                                placeholder="e.g. 2500"
+                                value={defaultHourRate}
+                                onChange={(e) => setDefaultHourRate(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <button
+                        className="btn btn-primary"
+                        onClick={handleSaveRates}
+                        style={{ padding: '0.75rem 2rem' }}
+                    >
+                        Save Settings
+                    </button>
                 </div>
             </section>
         </div>

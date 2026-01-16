@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Droplet, Wrench, User, Coffee, CreditCard, Trash2, Loader2, Download, Landmark, Edit, X } from 'lucide-react';
 import { supabase } from '../supabase';
 import EditExpenseModal from '../components/EditExpenseModal';
+import ExpenseHistoryModal from '../components/ExpenseHistoryModal';
 import '../mobile.css';
 
 const CATEGORIES = [
@@ -15,6 +16,7 @@ const CATEGORIES = [
 
 const ExpensesPage: React.FC = () => {
     const [showForm, setShowForm] = useState(false);
+    const [showHistory, setShowHistory] = useState(false);
     const [amount, setAmount] = useState<string>('');
     const [category, setCategory] = useState<string>('Fuel');
     const [description, setDescription] = useState<string>('');
@@ -235,10 +237,12 @@ const ExpensesPage: React.FC = () => {
             )}
 
             {/* Expenses List */}
-            <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '1.1rem' }}>
-                Recent History
-                <span style={{ fontSize: '0.8rem', fontWeight: 400, color: 'var(--text-secondary)' }}>Last 20</span>
-            </h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', gap: '1rem' }}>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', whiteSpace: 'nowrap' }}>Recent History</h3>
+                <button className="btn btn-secondary" onClick={() => setShowHistory(true)} style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', height: 'auto', whiteSpace: 'nowrap' }}>
+                    View All
+                </button>
+            </div>
 
             {loading ? (
                 <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}><Loader2 className="animate-spin" /></div>
@@ -322,6 +326,15 @@ const ExpensesPage: React.FC = () => {
                     onSuccess={() => {
                         fetchExpenses();
                     }}
+                />
+            )}
+
+            {showHistory && (
+                <ExpenseHistoryModal
+                    onClose={() => setShowHistory(false)}
+                    onEdit={(e) => { setEditExpense(e); setShowHistory(false); }}
+                    onDelete={handleDelete}
+                    categories={CATEGORIES}
                 />
             )}
         </div>
