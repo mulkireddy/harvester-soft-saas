@@ -388,7 +388,25 @@ const FarmersPage: React.FC = () => {
 
                     <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
                         {/* Row 1: Who (Mobile & Name) */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.8fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                        {/* Row 1: Farmer Name (Full Width) */}
+                        <div className="input-group" style={{ marginBottom: '0.75rem' }}>
+                            <label className="label" style={{ fontSize: '0.75rem' }}>Farmer Name</label>
+                            <div style={{ position: 'relative' }}>
+                                <input
+                                    type="text"
+                                    className="input input-compact"
+                                    placeholder="Name"
+                                    style={{ padding: '0.6rem', fontSize: '0.9rem', width: '100%' }}
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    autoFocus
+                                />
+                                {existingFarmerId && <Check size={14} color="var(--primary)" style={{ position: 'absolute', right: '8px', top: '10px' }} />}
+                            </div>
+                        </div>
+
+                        {/* Row 2: Mobile & Date */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
                             <div className="input-group" style={{ marginBottom: 0 }}>
                                 <label className="label" style={{ fontSize: '0.75rem' }}>Mobile</label>
                                 <input
@@ -402,23 +420,19 @@ const FarmersPage: React.FC = () => {
                                 />
                             </div>
                             <div className="input-group" style={{ marginBottom: 0 }}>
-                                <label className="label" style={{ fontSize: '0.75rem' }}>Farmer Name</label>
-                                <div style={{ position: 'relative' }}>
-                                    <input
-                                        type="text"
-                                        className="input input-compact"
-                                        placeholder="Name"
-                                        style={{ padding: '0.6rem', fontSize: '0.9rem', width: '100%' }}
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
-                                    />
-                                    {existingFarmerId && <Check size={14} color="var(--primary)" style={{ position: 'absolute', right: '8px', top: '10px' }} />}
-                                </div>
+                                <label className="label" style={{ fontSize: '0.75rem' }}>Date</label>
+                                <input
+                                    type="date"
+                                    className="input input-compact"
+                                    style={{ padding: '0.6rem', fontSize: '0.85rem', width: '100%' }}
+                                    value={jobDate}
+                                    onChange={(e) => setJobDate(e.target.value)}
+                                />
                             </div>
                         </div>
 
-                        {/* Row 2: Where & What (Place, Crop, Date) - TIGHT GRID */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                        {/* Row 3: Village & Crop */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
                             <div className="input-group" style={{ marginBottom: 0 }}>
                                 <label className="label" style={{ fontSize: '0.75rem' }}>Village</label>
                                 <input
@@ -439,16 +453,6 @@ const FarmersPage: React.FC = () => {
                                     style={{ padding: '0.6rem', fontSize: '0.9rem' }}
                                     value={crop}
                                     onChange={(e) => setCrop(e.target.value)}
-                                />
-                            </div>
-                            <div className="input-group" style={{ marginBottom: 0 }}>
-                                <label className="label" style={{ fontSize: '0.75rem' }}>Date</label>
-                                <input
-                                    type="date"
-                                    className="input input-compact"
-                                    style={{ padding: '0.6rem', fontSize: '0.85rem', width: '100%' }}
-                                    value={jobDate}
-                                    onChange={(e) => setJobDate(e.target.value)}
                                 />
                             </div>
                         </div>
