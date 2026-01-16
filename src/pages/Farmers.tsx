@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 
 
-import { User, Users, MapPin, Phone, Sprout, Hash, Clock, DollarSign, Loader2, Calendar, History, X } from 'lucide-react';
+import { User, Users, Clock, Loader2, History, X, Check } from 'lucide-react';
 import { supabase } from '../supabase';
 import PaymentModal from '../components/PaymentModal';
 import EditJobModal from '../components/EditJobModal';
@@ -20,18 +20,8 @@ const FarmersPage: React.FC = () => {
     const [rate, setRate] = useState<number | ''>('');
     const [total, setTotal] = useState<number>(0);
 
-    // Smart Chips State
-    const [historyPlaces, setHistoryPlaces] = useState<string[]>([]);
-    const [historyCrops, setHistoryCrops] = useState<string[]>([]);
+    // State for Collapsible Form
     const [showForm, setShowForm] = useState(false);
-
-    // Helper to update history (Max 5 items)
-    const updateHistory = (key: string, value: string) => {
-        if (!value) return;
-        const current = JSON.parse(localStorage.getItem(key) || '[]');
-        const updated = [value, ...current.filter((i: string) => i !== value)].slice(0, 5);
-        localStorage.setItem(key, JSON.stringify(updated));
-    };
 
     // Form Fields
     const [name, setName] = useState('');
@@ -63,7 +53,7 @@ const FarmersPage: React.FC = () => {
     const [paymentType, setPaymentType] = useState<PaymentType>('Pending');
     // const [offerPayment, setOfferPayment] = useState<boolean>(false); // REMOVED
     const [paidAmount, setPaidAmount] = useState<number | ''>('');
-    const [paymentMethod, setPaymentMethod] = useState<string>('Cash');
+    const [paymentMethod] = useState<string>('Cash');
 
 
     // const paymentStatus = ... (Calculated automatically via buttons now)
@@ -150,10 +140,6 @@ const FarmersPage: React.FC = () => {
         if (savedPlace) setPlace(savedPlace);
         if (savedRate) setRate(Number(savedRate));
         if (savedMachine) setSelectedMachine(savedMachine);
-
-        // Load History Chips
-        setHistoryPlaces(JSON.parse(localStorage.getItem(`user_${userId}_history_places`) || '[]'));
-        setHistoryCrops(JSON.parse(localStorage.getItem(`user_${userId}_history_crops`) || '[]'));
     }, [userId]);
 
     // Fetch Machines on Load
@@ -238,12 +224,6 @@ const FarmersPage: React.FC = () => {
                 localStorage.setItem(`user_${userId}_default_place`, place);
                 localStorage.setItem(`user_${userId}_default_rate`, String(rate));
                 if (selectedMachine) localStorage.setItem(`user_${userId}_default_machine`, selectedMachine);
-
-                // Update History Chips
-                updateHistory(`user_${userId}_history_places`, place);
-                updateHistory(`user_${userId}_history_crops`, crop);
-                setHistoryPlaces(JSON.parse(localStorage.getItem(`user_${userId}_history_places`) || '[]'));
-                setHistoryCrops(JSON.parse(localStorage.getItem(`user_${userId}_history_crops`) || '[]'));
             }
 
 
@@ -253,8 +233,6 @@ const FarmersPage: React.FC = () => {
             // Keep Place & Rate (Smart Defaults for same session)
             // setPlace(''); 
             // setRate('');
-            setMeasurement('');
-            setPaidAmount('');
             setMeasurement('');
             setPaidAmount('');
             setPaymentType('Pending'); // Reset to default
