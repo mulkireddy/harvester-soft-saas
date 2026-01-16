@@ -1,17 +1,20 @@
-
 import React, { useState, useEffect } from 'react';
-import { Droplet, Wrench, User, Coffee, CreditCard, Trash2, Loader2 } from 'lucide-react';
+import { Droplet, Wrench, User, Coffee, CreditCard, Trash2, Loader2, Download, Landmark, Edit, X } from 'lucide-react';
 import { supabase } from '../supabase';
+import EditExpenseModal from '../components/EditExpenseModal';
+import '../mobile.css';
 
 const CATEGORIES = [
     { id: 'Fuel', label: 'Diesel / Fuel', icon: Droplet, color: '#FEE2E2', textColor: '#991B1B' },
     { id: 'Spares & Repairs', label: 'Spares & Repairs', icon: Wrench, color: '#FEF3C7', textColor: '#92400E' },
     { id: 'Driver Salary', label: 'Driver Salary', icon: User, color: '#DBEAFE', textColor: '#1E40AF' },
     { id: 'Food', label: 'Food & Allowance', icon: Coffee, color: '#D1FAE5', textColor: '#065F46' },
+    { id: 'EMI', label: 'Machine EMI', icon: Landmark, color: '#E0E7FF', textColor: '#4338CA' },
     { id: 'Other', label: 'Other Expenses', icon: CreditCard, color: '#F3F4F6', textColor: '#374151' }
 ];
 
 const ExpensesPage: React.FC = () => {
+    const [showForm, setShowForm] = useState(false);
     const [amount, setAmount] = useState<string>('');
     const [category, setCategory] = useState<string>('Fuel');
     const [description, setDescription] = useState<string>('');
@@ -20,6 +23,7 @@ const ExpensesPage: React.FC = () => {
     const [recentExpenses, setRecentExpenses] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [editExpense, setEditExpense] = useState<any>(null);
 
     // Machines
     const [machines, setMachines] = useState<any[]>([]);
@@ -27,9 +31,6 @@ const ExpensesPage: React.FC = () => {
 
     useEffect(() => {
         fetchExpenses();
-    }, []);
-
-    useEffect(() => {
         fetchMachines();
     }, []);
 
@@ -75,6 +76,7 @@ const ExpensesPage: React.FC = () => {
             setAmount('');
             setDescription('');
             fetchExpenses();
+            setShowForm(false); // Close form after save
 
         } catch (err) {
             console.error(err);
@@ -91,192 +93,236 @@ const ExpensesPage: React.FC = () => {
         if (!error) fetchExpenses();
     };
 
+    const handleExport = () => {
+        if (!recentExpenses.length) return alert('No data to export');
+
+        const headers = ['Date', 'Category', 'Description', 'Machine', 'Amount'];
+        const csvContent = [
+            headers.join(','),
+            ...recentExpenses.map(e => [
+                new Date(e.date).toLocaleDateString(),
+                `"${e.category}"`,
+                `"${e.description || ''}"`,
+                e.machines?.name || '',
+                e.amount
+            ].join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `expenses_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+    };
+
     return (
-        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-            <header style={{ marginBottom: '2rem' }}>
-                <h1 style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>Expenses</h1>
-                <p style={{ color: 'var(--text-secondary)' }}>Track your daily spending to calculate net profit.</p>
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+            <header style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                    <h1 style={{ fontSize: '1.5rem', marginBottom: '0.25rem', fontWeight: 700 }}>Expenses</h1>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Track spending & costs.</p>
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button onClick={handleExport} className="icon-btn" title="Export CSV" style={{ background: '#F3F4F6', color: '#4B5563' }}>
+                        <Download size={20} />
+                    </button>
+                    <button
+                        onClick={() => setShowForm(!showForm)}
+                        className="btn btn-primary"
+                        style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', borderRadius: '8px', minHeight: '40px' }}
+                    >
+                        {showForm ? 'Cancel' : 'New Entry'}
+                    </button>
+                </div>
             </header>
 
             {/* Entry Form */}
-            <div className="card" style={{ marginBottom: '2rem' }}>
-                <form onSubmit={handleSave}>
-                    {/* Category Selection (Visual Pills) */}
-                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-                        {CATEGORIES.map(cat => (
-                            <button
-                                key={cat.id}
-                                type="button"
-                                onClick={() => setCategory(cat.id)}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    padding: '0.5rem 1rem',
-                                    borderRadius: '20px',
-                                    fontSize: '0.875rem',
-                                    fontWeight: 500,
-                                    border: category === cat.id ? `2px solid ${cat.textColor}` : '1px solid transparent',
-                                    backgroundColor: category === cat.id ? 'white' : cat.color,
-                                    color: cat.textColor,
-                                    transition: 'all 0.2s',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                <cat.icon size={16} />
-                                {cat.label}
-                            </button>
-                        ))}
-                    </div>
+            {showForm && (
+                <div className="card" style={{ marginBottom: '2rem', animation: 'fadeIn 0.2s ease-out' }}>
+                    <h2 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        New Expense
+                        <button onClick={() => setShowForm(false)} style={{ color: 'var(--text-secondary)' }}><X size={20} /></button>
+                    </h2>
 
-                    {/* Machine Select (Optional) */}
-                    <div style={{ marginBottom: '1.5rem' }}>
-                        <label className="label" style={{ marginBottom: '0.5rem', display: 'block' }}>Which Machine? (Optional)</label>
-                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                            <button
-                                type="button"
-                                onClick={() => setSelectedMachine('')}
-                                style={{
-                                    padding: '0.5rem 1rem', borderRadius: '20px', fontSize: '0.85rem',
-                                    border: !selectedMachine ? '2px solid var(--primary)' : '1px solid var(--border-light)',
-                                    background: !selectedMachine ? 'var(--bg-main)' : 'white',
-                                    color: !selectedMachine ? 'var(--primary)' : 'var(--text-secondary)'
-                                }}
-                            >
-                                General / All
-                            </button>
-                            {machines.map(m => (
+                    <form onSubmit={handleSave}>
+                        {/* Category Selection */}
+                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+                            {CATEGORIES.map(cat => (
                                 <button
-                                    key={m.id}
+                                    key={cat.id}
                                     type="button"
-                                    onClick={() => setSelectedMachine(m.id)}
+                                    onClick={() => setCategory(cat.id)}
                                     style={{
-                                        padding: '0.5rem 1rem', borderRadius: '20px', fontSize: '0.85rem',
-                                        border: selectedMachine === m.id ? '2px solid var(--primary)' : '1px solid var(--border-light)',
-                                        background: selectedMachine === m.id ? 'var(--bg-main)' : 'white',
-                                        color: selectedMachine === m.id ? 'var(--primary)' : 'var(--text-secondary)'
+                                        display: 'flex', alignItems: 'center', gap: '6px',
+                                        padding: '0.4rem 0.8rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 500,
+                                        border: category === cat.id ? `2px solid ${cat.textColor}` : '1px solid var(--border-light)',
+                                        backgroundColor: category === cat.id ? 'white' : 'var(--bg-main)',
+                                        color: category === cat.id ? cat.textColor : 'var(--text-secondary)',
                                     }}
                                 >
-                                    {m.name}
+                                    <cat.icon size={14} />
+                                    {cat.label}
                                 </button>
                             ))}
                         </div>
-                    </div>
 
-                    <div className="input-group">
-                        <label className="label">Amount</label>
-                        <div style={{ position: 'relative' }}>
-                            <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', fontSize: '1.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>₹</span>
-                            <input
-                                type="number"
-                                value={amount}
-                                onChange={(e) => setAmount(e.target.value)}
-                                placeholder="0"
-                                className="input"
-                                style={{ paddingLeft: '3rem', fontSize: '2rem', fontWeight: 700, height: 'auto', padding: '1rem 1rem 1rem 3rem' }}
-                                autoFocus
-                            />
+                        {/* Amount & Machine */}
+                        <div className="grid-responsive grid-2" style={{ gap: '0.75rem', marginBottom: '0.75rem' }}>
+                            <div className="input-group" style={{ marginBottom: 0 }}>
+                                <label className="label" style={{ fontSize: '0.75rem' }}>Amount</label>
+                                <input
+                                    type="number"
+                                    value={amount}
+                                    onChange={(e) => setAmount(e.target.value)}
+                                    placeholder="0"
+                                    className="input input-compact"
+                                    style={{ fontSize: '1.1rem', fontWeight: 700 }}
+                                    autoFocus
+                                />
+                            </div>
+                            <div className="input-group" style={{ marginBottom: 0 }}>
+                                <label className="label" style={{ fontSize: '0.75rem' }}>Machine (Optional)</label>
+                                <select
+                                    className="input input-compact"
+                                    value={selectedMachine}
+                                    onChange={(e) => setSelectedMachine(e.target.value)}
+                                >
+                                    <option value="">General / All</option>
+                                    {machines.map(m => (
+                                        <option key={m.id} value={m.id}>{m.name}</option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
-                    </div>
 
-                    <div className="grid-responsive grid-2" style={{ gap: '1rem', marginTop: '1.5rem' }}>
-                        <div className="input-group">
-                            <label className="label">Date</label>
-                            <input
-                                type="date"
-                                className="input"
-                                value={date}
-                                onChange={(e) => setDate(e.target.value)}
-                            />
+                        {/* Date & Note */}
+                        <div className="grid-responsive grid-2" style={{ gap: '0.75rem', marginBottom: '1rem' }}>
+                            <div className="input-group" style={{ marginBottom: 0 }}>
+                                <label className="label" style={{ fontSize: '0.75rem' }}>Date</label>
+                                <input
+                                    type="date"
+                                    className="input input-compact"
+                                    value={date}
+                                    onChange={(e) => setDate(e.target.value)}
+                                />
+                            </div>
+                            <div className="input-group" style={{ marginBottom: 0 }}>
+                                <label className="label" style={{ fontSize: '0.75rem' }}>Note</label>
+                                <input
+                                    type="text"
+                                    className="input input-compact"
+                                    placeholder="Description"
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                />
+                            </div>
                         </div>
-                        <div className="input-group">
-                            <label className="label">Note (Optional)</label>
-                            <input
-                                type="text"
-                                className="input"
-                                placeholder="e.g. 50 Liters @ 92"
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                            />
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border-light)' }}>
+                            <button type="button" onClick={() => setShowForm(false)} className="btn btn-secondary btn-sm" style={{ border: 'none' }}>Cancel</button>
+                            <button
+                                type="submit"
+                                className="btn btn-primary btn-sm"
+                                style={{ padding: '0.5rem 2rem', fontSize: '0.9rem' }}
+                                disabled={isSaving || !amount}
+                            >
+                                {isSaving ? <Loader2 className="animate-spin" size={16} /> : 'Save Expense'}
+                            </button>
                         </div>
-                    </div>
+                    </form>
+                </div>
+            )}
 
-                    <button
-                        type="submit"
-                        className="btn btn-primary"
-                        style={{ width: '100%', marginTop: '1.5rem', padding: '1rem', fontSize: '1rem' }}
-                        disabled={isSaving || !amount}
-                    >
-                        {isSaving ? <Loader2 className="animate-spin" /> : 'Add Expense'}
-                    </button>
-                </form>
-            </div>
-
-            {/* Recent Expenses List */}
-            <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            {/* Expenses List */}
+            <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '1.1rem' }}>
                 Recent History
-                <span style={{ fontSize: '0.875rem', fontWeight: 400, color: 'var(--text-secondary)' }}>Last 20 records</span>
+                <span style={{ fontSize: '0.8rem', fontWeight: 400, color: 'var(--text-secondary)' }}>Last 20</span>
             </h3>
 
             {loading ? (
                 <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}><Loader2 className="animate-spin" /></div>
             ) : recentExpenses.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)', background: '#F9FAFB', borderRadius: '12px' }}>
+                <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
                     <p>No expenses recorded yet.</p>
                 </div>
             ) : (
-                <div style={{ display: 'grid', gap: '1rem' }}>
+                <div style={{ display: 'grid', gap: '0.75rem' }}>
                     {recentExpenses.map(expense => {
-                        const CategoryData = CATEGORIES.find(c => c.id === expense.category) || CATEGORIES[4];
+                        const CategoryData = CATEGORIES.find(c => c.id === expense.category) || CATEGORIES[5];
                         const Icon = CategoryData.icon;
 
                         return (
-                            <div key={expense.id} className="card" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div key={expense.id} className="card" style={{ padding: '1rem', display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
                                 <div style={{
-                                    width: '48px', height: '48px',
-                                    borderRadius: '12px',
+                                    width: '40px', height: '40px',
+                                    borderRadius: '10px',
                                     backgroundColor: CategoryData.color,
                                     color: CategoryData.textColor,
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    flexShrink: 0
                                 }}>
-                                    <Icon size={24} />
+                                    <Icon size={20} />
                                 </div>
 
                                 <div style={{ flex: 1 }}>
-                                    <h4 style={{ fontSize: '1rem', fontWeight: 600, color: '#1F2937' }}>{expense.category}</h4>
-                                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                                        {expense.machines?.name && (
-                                            <span style={{
-                                                background: '#EFF6FF', color: '#1E40AF', padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600
-                                            }}>
-                                                {expense.machines.name}
-                                            </span>
-                                        )}
+                                    <h4 style={{ fontSize: '1rem', fontWeight: 600, color: '#1F2937', marginBottom: '2px' }}>{expense.category}</h4>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                                         <span>{new Date(expense.date).toLocaleDateString()}</span>
-                                        {expense.description && (
+                                        {expense.machines?.name && (
                                             <>
                                                 <span>•</span>
-                                                <span>{expense.description}</span>
+                                                <span style={{
+                                                    background: '#EFF6FF', color: '#1E40AF', padding: '1px 6px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600
+                                                }}>
+                                                    {expense.machines.name}
+                                                </span>
+                                            </>
+                                        )}
+                                        {expense.description && (
+                                            <>
+                                                <span className="hide-on-mobile">•</span>
+                                                <span style={{ fontStyle: 'italic' }}>{expense.description}</span>
                                             </>
                                         )}
                                     </div>
                                 </div>
 
-                                <div style={{ textAlign: 'right' }}>
-                                    <div style={{ fontSize: '1.125rem', fontWeight: 700, color: '#DC2626' }}>
+                                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                                    <div style={{ fontSize: '1rem', fontWeight: 700, color: '#DC2626' }}>
                                         - ₹{expense.amount.toLocaleString()}
                                     </div>
-                                    <button
-                                        onClick={() => handleDelete(expense.id)}
-                                        style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px', marginLeft: 'auto' }}
-                                    >
-                                        <Trash2 size={12} /> Remove
-                                    </button>
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <button
+                                            onClick={() => setEditExpense(expense)}
+                                            style={{ padding: '4px', background: '#EFF6FF', color: '#3B82F6', borderRadius: '4px', border: 'none' }}
+                                        >
+                                            <Edit size={14} />
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(expense.id)}
+                                            style={{ padding: '4px', background: '#FEF2F2', color: '#EF4444', borderRadius: '4px', border: 'none' }}
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         );
                     })}
                 </div>
+            )}
+
+            {editExpense && (
+                <EditExpenseModal
+                    expense={editExpense}
+                    machines={machines}
+                    categories={CATEGORIES}
+                    onClose={() => setEditExpense(null)}
+                    onSuccess={() => {
+                        fetchExpenses();
+                    }}
+                />
             )}
         </div>
     );
