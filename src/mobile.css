@@ -286,10 +286,16 @@
         min-height: 44px;
     }
 
-    input,
-    select,
-    textarea {
+    input:not(.input-compact),
+    select:not(.input-compact),
+    textarea:not(.input-compact) {
         font-size: 16px !important;
         min-height: 44px;
+    }
+
+    .input-compact {
+        min-height: 34px !important;
+        font-size: 14px !important;
+        padding: 0.4rem !important;
     }
 }

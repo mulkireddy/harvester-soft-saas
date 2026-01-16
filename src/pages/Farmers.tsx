@@ -383,7 +383,7 @@ const FarmersPage: React.FC = () => {
                                 <label className="label" style={{ fontSize: '0.75rem' }}>Mobile</label>
                                 <input
                                     type="tel"
-                                    className="input"
+                                    className="input input-compact"
                                     placeholder="98765..."
                                     style={{ padding: '0.6rem', fontSize: '0.9rem' }}
                                     value={mobile}
@@ -396,7 +396,7 @@ const FarmersPage: React.FC = () => {
                                 <div style={{ position: 'relative' }}>
                                     <input
                                         type="text"
-                                        className="input"
+                                        className="input input-compact"
                                         placeholder="Name"
                                         style={{ padding: '0.6rem', fontSize: '0.9rem', width: '100%' }}
                                         value={name}
@@ -413,7 +413,7 @@ const FarmersPage: React.FC = () => {
                                 <label className="label" style={{ fontSize: '0.75rem' }}>Village</label>
                                 <input
                                     type="text"
-                                    className="input"
+                                    className="input input-compact"
                                     placeholder="Village"
                                     style={{ padding: '0.6rem', fontSize: '0.9rem' }}
                                     value={place}
@@ -424,7 +424,7 @@ const FarmersPage: React.FC = () => {
                                 <label className="label" style={{ fontSize: '0.75rem' }}>Crop</label>
                                 <input
                                     type="text"
-                                    className="input"
+                                    className="input input-compact"
                                     placeholder="Crop"
                                     style={{ padding: '0.6rem', fontSize: '0.9rem' }}
                                     value={crop}
@@ -435,7 +435,7 @@ const FarmersPage: React.FC = () => {
                                 <label className="label" style={{ fontSize: '0.75rem' }}>Date</label>
                                 <input
                                     type="date"
-                                    className="input"
+                                    className="input input-compact"
                                     style={{ padding: '0.6rem', fontSize: '0.85rem', width: '100%' }}
                                     value={jobDate}
                                     onChange={(e) => setJobDate(e.target.value)}
@@ -478,7 +478,7 @@ const FarmersPage: React.FC = () => {
                                 </label>
                                 <input
                                     type="number"
-                                    className="input"
+                                    className="input input-compact"
                                     step="0.1"
                                     placeholder="0"
                                     style={{ padding: '0.5rem', textAlign: 'center', fontWeight: 600 }}
@@ -491,7 +491,7 @@ const FarmersPage: React.FC = () => {
                                 <label className="label" style={{ fontSize: '0.7rem' }}>Rate</label>
                                 <input
                                     type="number"
-                                    className="input"
+                                    className="input input-compact"
                                     placeholder="0"
                                     style={{ padding: '0.5rem', textAlign: 'center' }}
                                     value={rate}
@@ -535,7 +535,7 @@ const FarmersPage: React.FC = () => {
                                 <div style={{ flex: 0.7 }}>
                                     <input
                                         type="number"
-                                        className="input"
+                                        className="input input-compact"
                                         placeholder="Paid"
                                         value={paidAmount}
                                         onChange={e => setPaidAmount(Number(e.target.value))}
