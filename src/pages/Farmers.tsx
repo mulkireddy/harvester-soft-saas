@@ -7,6 +7,7 @@ import { supabase } from '../supabase';
 import PaymentModal from '../components/PaymentModal';
 import EditJobModal from '../components/EditJobModal';
 import '../mobile.css';
+import toast from 'react-hot-toast';
 
 import JobHistoryModal from '../components/JobHistoryModal';
 import JobCard from '../components/JobCard';
@@ -34,7 +35,7 @@ const FarmersPage: React.FC = () => {
     // Loading & Data State
     const [isSaving, setIsSaving] = useState(false);
     const [recentJobs, setRecentJobs] = useState<any[]>([]);
-    const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    // const [successMessage, setSuccessMessage] = useState<string | null>(null); // Removed for Toast
     const [selectedJob, setSelectedJob] = useState<any>(null); // For Payment Modal
     const [editJob, setEditJob] = useState<any>(null); // For Edit Modal
     const [showHistory, setShowHistory] = useState(false);
@@ -44,6 +45,7 @@ const FarmersPage: React.FC = () => {
     const [machines, setMachines] = useState<any[]>([]);
     const [selectedMachine, setSelectedMachine] = useState<string>('');
     const [userId, setUserId] = useState<string | null>(null);
+    const [allVillages, setAllVillages] = useState<string[]>([]);
 
     // Payment State
 
@@ -113,7 +115,16 @@ const FarmersPage: React.FC = () => {
             fetchRecentJobs();
         };
         init();
+        fetchVillages();
     }, []);
+
+    const fetchVillages = async () => {
+        const { data } = await supabase.from('farmers').select('place');
+        if (data) {
+            const unique = Array.from(new Set(data.map(d => d.place).filter(Boolean)));
+            setAllVillages(unique);
+        }
+    };
 
     const fetchRecentJobs = async () => {
         const { data, error } = await supabase
@@ -161,7 +172,7 @@ const FarmersPage: React.FC = () => {
 
     const handleSave = async () => {
         if (!name || !measurement || !rate) {
-            alert('Please fill in Name, Measurement, and Rate');
+            toast.error('Please fill in Name, Measurement, and Rate');
             return;
         }
 
@@ -219,7 +230,7 @@ const FarmersPage: React.FC = () => {
             }
 
             // Success
-            alert('Record Saved Successfully!');
+            toast.success('Record Saved Successfully!');
 
             // Smart Defaults: Save for next time (User Scoped)
             if (userId) {
@@ -246,7 +257,7 @@ const FarmersPage: React.FC = () => {
 
         } catch (error: any) {
             console.error('Error saving record:', error);
-            alert('Error saving record: ' + error.message);
+            toast.error('Error saving record: ' + error.message);
         } finally {
             setIsSaving(false);
         }
@@ -254,7 +265,7 @@ const FarmersPage: React.FC = () => {
 
     const handleShare = (job: any) => {
         if (!job.farmers?.mobile) {
-            alert('No mobile number found for this farmer.');
+            toast.error('No mobile number found for this farmer.');
             return;
         }
 
@@ -287,15 +298,16 @@ const FarmersPage: React.FC = () => {
 
         const { error } = await supabase.from('jobs').delete().eq('id', jobId);
         if (error) {
-            alert('Error deleting: ' + error.message);
+            toast.error('Error deleting: ' + error.message);
         } else {
+            toast.success('Record Deleted');
             // Update UI
             setRecentJobs(prev => prev.filter(j => j.id !== jobId));
         }
     };
 
     const handleExport = () => {
-        if (!recentJobs.length) return alert('No data to export');
+        if (!recentJobs.length) return toast.error('No data to export');
 
         const headers = ['Date', 'Farmer', 'Village', 'Mobile', 'Crop', 'Machine', 'Mode', 'Qty', 'Rate', 'Total', 'Paid', 'Status'];
         const csvContent = [
@@ -374,19 +386,7 @@ const FarmersPage: React.FC = () => {
                         <button onClick={() => setShowForm(false)} style={{ color: 'var(--text-secondary)' }}><X size={20} /></button>
                     </h2>
 
-                    {successMessage && (
-                        <div style={{
-                            marginBottom: '1rem',
-                            padding: '0.75rem',
-                            backgroundColor: '#DCFCE7',
-                            color: '#166534',
-                            borderRadius: 'var(--radius-md)',
-                            fontSize: '0.9rem',
-                            fontWeight: 600
-                        }}>
-                            {successMessage}
-                        </div>
-                    )}
+                    {/* successMessage logic removed - using toast now */}
 
                     <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
                         {/* Row 1: Who (Mobile & Name) */}
@@ -444,7 +444,11 @@ const FarmersPage: React.FC = () => {
                                     style={{ padding: '0.6rem', fontSize: '0.9rem' }}
                                     value={place}
                                     onChange={(e) => setPlace(e.target.value)}
+                                    list="village-options"
                                 />
+                                <datalist id="village-options">
+                                    {allVillages.map((v, i) => <option key={i} value={v} />)}
+                                </datalist>
                             </div>
                             <div className="input-group" style={{ marginBottom: 0 }}>
                                 <label className="label" style={{ fontSize: '0.75rem' }}>Crop</label>
@@ -619,8 +623,8 @@ const FarmersPage: React.FC = () => {
                         job={selectedJob}
                         onClose={() => setSelectedJob(null)}
                         onSuccess={(result) => {
-                            setSuccessMessage('Payment Updated Successfully!');
-                            setTimeout(() => setSuccessMessage(null), 3000);
+                            toast.success('Payment Updated!');
+                            // setTimeout(() => setSuccessMessage(null), 3000);
 
                             // Optimistic Update with REAL data from modal
                             if (result) {
@@ -652,8 +656,8 @@ const FarmersPage: React.FC = () => {
                         machines={machines}
                         onClose={() => setEditJob(null)}
                         onSuccess={() => {
-                            setSuccessMessage('Record Updated Successfully!');
-                            setTimeout(() => setSuccessMessage(null), 3000);
+                            toast.success('Record Updated!');
+                            // setTimeout(() => setSuccessMessage(null), 3000);
                             fetchRecentJobs();
                         }}
                     />

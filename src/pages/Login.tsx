@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, ArrowRight, Loader2, Shield, Phone } from 'lucide-react';
+import { Lock, ArrowRight, Loader2, Phone } from 'lucide-react';
 import { supabase } from '../supabase';
 import { useNavigate } from 'react-router-dom';
 
@@ -87,20 +87,14 @@ const Login: React.FC = () => {
                 boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)'
             }}>
                 <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-                    <div style={{
-                        width: '56px', height: '56px',
-                        background: 'linear-gradient(135deg, #4F46E5 0%, #3B82F6 100%)',
-                        borderRadius: '16px',
-                        margin: '0 auto 1rem',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white',
-                        boxShadow: '0 4px 6px -1px rgba(79, 70, 229, 0.3)'
-                    }}>
-                        <Shield size={32} />
-                    </div>
-                    <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#111827', marginBottom: '0.5rem' }}>
+                    <img src="/logo.png" alt="HarvesterOS" style={{ height: '72px', width: 'auto', marginBottom: '1rem' }} />
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827', marginBottom: '0.25rem' }}>HarvesterOS</h1>
+                    <p style={{ color: 'var(--primary)', fontWeight: 600, fontSize: '0.9rem', marginBottom: '1.5rem' }}>Business Manager</p>
+
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>
                         {isSignUp ? 'Create Account' : 'Welcome Back'}
-                    </h1>
-                    <p style={{ color: '#6B7280' }}>
+                    </h2>
+                    <p style={{ color: '#6B7280', fontSize: '0.95rem' }}>
                         {isSignUp ? 'Start managing your harvest business.' : 'Enter your credentials to access.'}
                     </p>
                 </div>

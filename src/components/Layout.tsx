@@ -4,6 +4,8 @@ import { LayoutDashboard, Users, Receipt, Settings, BarChart2, LogOut } from 'lu
 import { Link, useLocation } from 'react-router-dom';
 import { supabase } from '../supabase';
 import '../mobile.css'; // Ensure mobile styles are imported
+import SyncStatus from './SyncStatus';
+import { Toaster } from 'react-hot-toast';
 
 interface LayoutProps {
     children: ReactNode;
@@ -32,7 +34,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             {/* Desktop Sidebar */}
             <aside className="desktop-sidebar">
                 <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <img src="/logo.png" alt="HarvesterOS" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
+                    <img src="/logo.png" alt="HarvesterOS" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
                     <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-main)', letterSpacing: '-0.5px' }}>HarvesterOS</h1>
                 </div>
 
@@ -65,7 +67,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             {/* Mobile Top Bar */}
             <header className="mobile-header" style={{ justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <img src="/logo.png" alt="HarvesterOS" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+                    <img src="/logo.png" alt="HarvesterOS" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
                     <h1 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)' }}>HarvesterOS</h1>
                 </div>
                 <button
@@ -97,6 +99,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     );
                 })}
             </nav>
+
+            <SyncStatus />
+            <Toaster position="top-center" reverseOrder={false} />
         </div>
     );
 };

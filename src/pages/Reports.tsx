@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Loader2, BarChart2, PieChart as PieChartIcon } from 'lucide-react';
+import { Loader2, BarChart2, PieChart as PieChartIcon, TrendingUp } from 'lucide-react';
 import { supabase } from '../supabase';
 import RevenueChart from '../components/analytics/RevenueChart';
 import ExpensePieChart from '../components/analytics/ExpensePieChart';
+import WaterfallChart from '../components/analytics/WaterfallChart';
 
 type FilterType = 'Week' | 'Month' | 'Year';
 
@@ -10,6 +11,7 @@ const Reports: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [chartData, setChartData] = useState<any[]>([]);
     const [pieData, setPieData] = useState<any[]>([]);
+    const [waterfallData, setWaterfallData] = useState<any[]>([]);
     const [filter, setFilter] = useState<FilterType>('Year');
 
     const [rawJobs, setRawJobs] = useState<any[]>([]);
@@ -141,6 +143,63 @@ const Reports: React.FC = () => {
         }).filter(item => item.value > 0);
 
         setPieData(pie);
+
+        // --- 3. Waterfall Data (Profit Flow) ---
+        // Calculate Totals based on current filter
+        const totalIncome = jobs.filter(j => {
+            const d = new Date(j.date);
+            if (currentFilter === 'Week') {
+                const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 7);
+                return d >= cutoff;
+            } else if (currentFilter === 'Month') {
+                const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 30);
+                return d >= cutoff;
+            } else {
+                const cutoff = new Date(); cutoff.setMonth(cutoff.getMonth() - 12);
+                return d >= cutoff;
+            }
+        }).reduce((sum, j) => sum + (j.total_amount || 0), 0);
+
+        const expensesByCat: Record<string, number> = {};
+        filteredExpenses.forEach(e => {
+            if (!expensesByCat[e.category]) expensesByCat[e.category] = 0;
+            expensesByCat[e.category] += (e.amount || 0);
+        });
+
+        // Construct Waterfall Steps
+        // 1. Revenue
+        const steps = [{
+            name: 'Total Revenue',
+            value: totalIncome,
+            originalValue: totalIncome,
+            fill: '#10B981' // Green
+        }];
+
+        // 2. Expenses (Negative)
+        let totalExp = 0;
+        Object.entries(expensesByCat).sort((a, b) => b[1] - a[1]).forEach(([cat, amount]) => {
+            // For a simple 'Step' visual without complex floating bars, we can just show them as negative bars in a bar chart.
+            // True waterfall requires complex math for 'floating' bars. Let's stick to Positive/Negative flow which is clear enough for mobile.
+            steps.push({
+                name: categoryMap[cat] || cat,
+                value: -amount, // Negative for visual downside
+                originalValue: -amount,
+                fill: colors[cat] || '#EF4444'
+            });
+            totalExp += amount;
+        });
+
+        // 3. Net Profit (Final Result)
+        const profit = totalIncome - totalExp;
+        steps.push({
+            name: 'Net Profit',
+            value: profit,
+            originalValue: profit,
+            fill: '#3B82F6' // Blue
+        });
+
+        setWaterfallData(steps);
+
     };
 
     if (loading) {
@@ -202,7 +261,7 @@ const Reports: React.FC = () => {
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                             <div style={{ padding: '0.5rem', background: '#EFF6FF', borderRadius: '8px', color: '#1E40AF' }}><PieChartIcon size={20} /></div>
-                            <h3 style={{ fontSize: '1.1rem', margin: 0 }}>Exepnses Breakdown</h3>
+                            <h3 style={{ fontSize: '1.1rem', margin: 0 }}>Expenses Breakdown</h3>
                         </div>
                     </div>
                     <div style={{ flex: 1, minHeight: '300px' }}>
@@ -210,6 +269,24 @@ const Reports: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Profit Flow / Waterfall */}
+            <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', marginBottom: '3rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <div style={{ padding: '0.5rem', background: '#ECFCCB', borderRadius: '8px', color: '#65A30D' }}><TrendingUp size={20} /></div>
+                        <div>
+                            <h3 style={{ fontSize: '1.1rem', margin: 0 }}>Profit Flow</h3>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>Where your money came from & where it went.</p>
+                        </div>
+                    </div>
+                </div>
+                <div style={{ flex: 1, minHeight: '350px' }}>
+                    {/* We use the correct data prop name */}
+                    <WaterfallChart data={waterfallData} />
+                </div>
+            </div>
+
         </div>
     );
 };
