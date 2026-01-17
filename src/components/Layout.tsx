@@ -30,7 +30,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     return (
         <div className="layout-container">
             {/* Desktop Sidebar */}
-            <aside className="desktop-sidebar" style={{ display: 'flex', flexDirection: 'column' }}>
+            <aside className="desktop-sidebar">
                 <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <img src="/logo.png" alt="HarvesterOS" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
                     <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-main)', letterSpacing: '-0.5px' }}>HarvesterOS</h1>
