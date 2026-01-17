@@ -127,7 +127,8 @@ const SettingsPage: React.FC = () => {
                     </div>
 
                     {/* Add New */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr) auto', gap: '1rem', alignItems: 'end' }}>
+                    {/* Add New */}
+                    <div style={{ display: 'grid', gap: '1rem' }}>
                         <div className="input-group" style={{ marginBottom: 0 }}>
                             <label className="label">Machine Name</label>
                             <input
@@ -150,9 +151,9 @@ const SettingsPage: React.FC = () => {
                             className="btn btn-primary"
                             onClick={handleAddMachine}
                             disabled={loading || !newMachineName}
-                            style={{ height: '42px', display: 'flex', alignItems: 'center', gap: '8px' }}
+                            style={{ height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%' }}
                         >
-                            <Plus size={18} /> Add
+                            <Plus size={18} /> Add Machine
                         </button>
                     </div>
                 </div>

@@ -1,7 +1,8 @@
 
 import React, { type ReactNode } from 'react';
-import { LayoutDashboard, Users, Receipt, Settings, BarChart2 } from 'lucide-react';
+import { LayoutDashboard, Users, Receipt, Settings, BarChart2, LogOut } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import { supabase } from '../supabase';
 import '../mobile.css'; // Ensure mobile styles are imported
 
 interface LayoutProps {
@@ -19,16 +20,23 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         { icon: Settings, label: 'Settings', path: '/settings' },
     ];
 
+    const handleLogout = async () => {
+        if (confirm('Are you sure you want to logout?')) {
+            await supabase.auth.signOut();
+            window.location.reload();
+        }
+    };
+
     return (
         <div className="layout-container">
             {/* Desktop Sidebar */}
-            <aside className="desktop-sidebar">
-                <div style={{ marginBottom: '3rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <div style={{ width: '32px', height: '32px', backgroundColor: 'var(--primary)', borderRadius: '8px' }}></div>
-                    <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-main)' }}>HarvesterOS</h1>
+            <aside className="desktop-sidebar" style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <img src="/logo.png" alt="HarvesterOS" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
+                    <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-main)', letterSpacing: '-0.5px' }}>HarvesterOS</h1>
                 </div>
 
-                <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
                     {navItems.map((item) => {
                         const isActive = location.pathname === item.path;
                         return (
@@ -43,14 +51,29 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         );
                     })}
                 </nav>
+
+                <button
+                    onClick={handleLogout}
+                    className="nav-item"
+                    style={{ marginTop: 'auto', color: '#EF4444', border: '1px solid #FECACA', background: '#FEF2F2' }}
+                >
+                    <LogOut size={20} />
+                    Logout
+                </button>
             </aside>
 
             {/* Mobile Top Bar */}
-            <header className="mobile-header">
+            <header className="mobile-header" style={{ justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <div style={{ width: '24px', height: '24px', backgroundColor: 'var(--primary)', borderRadius: '6px' }}></div>
+                    <img src="/logo.png" alt="HarvesterOS" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
                     <h1 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)' }}>HarvesterOS</h1>
                 </div>
+                <button
+                    onClick={handleLogout}
+                    style={{ padding: '0.5rem', color: '#EF4444', background: '#FEF2F2', borderRadius: '8px', border: 'none' }}
+                >
+                    <LogOut size={20} />
+                </button>
             </header>
 
             {/* Main Content Area */}

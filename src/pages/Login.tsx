@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Lock, ArrowRight, Loader2, Shield } from 'lucide-react';
+import { Lock, ArrowRight, Loader2, Shield, Phone } from 'lucide-react';
 import { supabase } from '../supabase';
 import { useNavigate } from 'react-router-dom';
 
@@ -34,9 +34,16 @@ const Login: React.FC = () => {
         setLoading(true);
 
         try {
+            // Handle Mobile Number Alias
+            let authEmail = email.trim();
+            // If strictly digits (10 chars or more), append domain
+            if (/^\d{10,}$/.test(authEmail)) {
+                authEmail = `${authEmail}@harvester.app`;
+            }
+
             if (isSignUp) {
                 const { error } = await supabase.auth.signUp({
-                    email: email.trim(),
+                    email: authEmail,
                     password,
                     // We don't set PIN here. User sets it on next screen (PinLock)
                 });
@@ -46,7 +53,7 @@ const Login: React.FC = () => {
                 alert('Account created! Please check your email and click the confirmation link.');
             } else {
                 const { error } = await supabase.auth.signInWithPassword({
-                    email: email.trim(),
+                    email: authEmail,
                     password,
                 });
                 if (error) throw error;
@@ -115,13 +122,13 @@ const Login: React.FC = () => {
 
                 <form onSubmit={handleAuth}>
                     <div className="input-group" style={{ marginBottom: '1.25rem' }}>
-                        <label className="label">Email Address</label>
+                        <label className="label">Mobile Number or Email</label>
                         <div style={{ position: 'relative' }}>
-                            <Mail size={20} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+                            <Phone size={20} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
                             <input
-                                type="email"
+                                type="text"
                                 className="input"
-                                placeholder="you@example.com"
+                                placeholder="98765 43210"
                                 style={{ paddingLeft: '2.5rem', width: '100%' }}
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}

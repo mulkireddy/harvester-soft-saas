@@ -9,6 +9,7 @@ import Reports from './pages/Reports';
 import FarmersPage from './pages/Farmers';
 import ExpensesPage from './pages/Expenses';
 import SettingsPage from './pages/Settings';
+import AdminDashboard from './pages/Admin';
 import Login from './pages/Login';
 import PinLock from './components/PinLock';
 
@@ -77,6 +78,7 @@ function App() {
                 <Route path="/farmers" element={<FarmersPage />} />
                 <Route path="/expenses" element={<ExpensesPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/admin" element={<AdminDashboard />} /> {/* Added AdminDashboard route */}
               </Routes>
             </Layout>
           </ProtectedRoute>
