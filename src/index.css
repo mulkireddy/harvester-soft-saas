@@ -271,6 +271,7 @@ a {
 
 /* Stats Grid Mobile */
 .stats-grid {
+    display: grid;
     grid-template-columns: 1fr 1fr;
     /* 2 columns on mobile */
     gap: 1rem;
