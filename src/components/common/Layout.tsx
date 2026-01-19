@@ -30,38 +30,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
     return (
         <div className="layout-container">
-            {/* Desktop Sidebar */}
-            <aside className="desktop-sidebar">
-                <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <img src="/logo.png" alt="HarvesterOS" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
-                    <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-main)', letterSpacing: '-0.5px' }}>HarvesterOS</h1>
-                </div>
 
-                <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
-                    {navItems.map((item) => {
-                        const isActive = location.pathname === item.path;
-                        return (
-                            <Link
-                                key={item.path}
-                                to={item.path}
-                                className={`nav-item ${isActive ? 'active' : ''}`}
-                            >
-                                <item.icon size={20} />
-                                {item.label}
-                            </Link>
-                        );
-                    })}
-                </nav>
-
-                <button
-                    onClick={handleLogout}
-                    className="nav-item"
-                    style={{ marginTop: 'auto', color: '#EF4444', border: '1px solid #FECACA', background: '#FEF2F2' }}
-                >
-                    <LogOut size={20} />
-                    Logout
-                </button>
-            </aside>
 
             {/* Mobile Top Bar */}
             <header className="mobile-header" style={{ justifyContent: 'space-between' }}>
