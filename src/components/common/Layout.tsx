@@ -2,8 +2,7 @@
 import React, { type ReactNode } from 'react';
 import { LayoutDashboard, Users, Receipt, Settings, BarChart2, LogOut } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
-import { supabase } from '../supabase';
-import '../mobile.css'; // Ensure mobile styles are imported
+import { supabase } from '../../lib/supabase';
 import SyncStatus from './SyncStatus';
 import { Toaster } from 'react-hot-toast';
 

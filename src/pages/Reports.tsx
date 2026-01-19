@@ -1,9 +1,13 @@
+
 import React, { useEffect, useState } from 'react';
-import { Loader2, BarChart2, PieChart as PieChartIcon, TrendingUp } from 'lucide-react';
-import { supabase } from '../supabase';
-import RevenueChart from '../components/analytics/RevenueChart';
-import ExpensePieChart from '../components/analytics/ExpensePieChart';
-import WaterfallChart from '../components/analytics/WaterfallChart';
+import { BarChart2, PieChart as PieChartIcon, TrendingUp } from 'lucide-react';
+import Skeleton from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
+import { supabase } from '../lib/supabase';
+import { playClickHaptic } from '../lib/ui-utils';
+import RevenueChart from '../components/features/analytics/RevenueChart';
+import ExpensePieChart from '../components/features/analytics/ExpensePieChart';
+import WaterfallChart from '../components/features/analytics/WaterfallChart';
 
 type FilterType = 'Week' | 'Month' | 'Year';
 
@@ -44,7 +48,7 @@ const Reports: React.FC = () => {
 
     const processCharts = (jobs: any[], expenses: any[], currentFilter: FilterType) => {
         // --- 1. Bar Chart Data (Revenue vs Expenses) ---
-        let processedData: any[] = [];
+        const processedData: any[] = [];
         const now = new Date();
 
         if (currentFilter === 'Week') {
@@ -204,8 +208,30 @@ const Reports: React.FC = () => {
 
     if (loading) {
         return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px', color: 'var(--text-secondary)' }}>
-                <Loader2 className="animate-spin" size={32} />
+            <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
+                    <div>
+                        <Skeleton width={150} height={32} style={{ marginBottom: '8px' }} />
+                        <Skeleton width={200} height={20} />
+                    </div>
+                    <Skeleton width={200} height={40} borderRadius={12} />
+                </div>
+
+                <div className="grid-responsive grid-2" style={{ gap: '2rem', marginBottom: '3rem' }}>
+                    <div className="card" style={{ padding: '1.5rem', height: '400px' }}>
+                        <Skeleton height={24} width={150} style={{ marginBottom: '1.5rem' }} />
+                        <Skeleton height="100%" />
+                    </div>
+                    <div className="card" style={{ padding: '1.5rem', height: '400px' }}>
+                        <Skeleton height={24} width={150} style={{ marginBottom: '1.5rem' }} />
+                        <Skeleton circle height={200} width={200} style={{ margin: 'auto', display: 'block' }} />
+                    </div>
+                </div>
+
+                <div className="card" style={{ padding: '1.5rem', height: '400px' }}>
+                    <Skeleton height={24} width={150} style={{ marginBottom: '1.5rem' }} />
+                    <Skeleton height="100%" />
+                </div>
             </div>
         );
     }
@@ -223,7 +249,7 @@ const Reports: React.FC = () => {
                     {(['Week', 'Month', 'Year'] as FilterType[]).map(f => (
                         <button
                             key={f}
-                            onClick={() => setFilter(f)}
+                            onClick={() => { playClickHaptic(); setFilter(f); }}
                             style={{
                                 padding: '0.5rem 1rem',
                                 borderRadius: '8px',

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { supabase } from './supabase';
+import { supabase } from './lib/supabase';
 import { Loader2 } from 'lucide-react';
 
-import Layout from './components/Layout';
+import Layout from './components/common/Layout';
 import Dashboard from './pages/Dashboard';
 import Reports from './pages/Reports';
 import FarmersPage from './pages/Farmers';
@@ -11,7 +11,7 @@ import ExpensesPage from './pages/Expenses';
 import SettingsPage from './pages/Settings';
 import AdminDashboard from './pages/Admin';
 import Login from './pages/Login';
-import PinLock from './components/PinLock';
+import PinLock from './components/common/PinLock';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {

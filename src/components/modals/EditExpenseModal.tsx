@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
-import { supabase } from '../supabase';
+import { supabase } from '../../lib/supabase';
 
 interface EditExpenseModalProps {
     expense: any;

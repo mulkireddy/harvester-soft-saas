@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, User, Phone, MapPin, Calendar, Sprout, Hash, Clock, DollarSign, Loader2 } from 'lucide-react';
-import '../mobile.css';
-import { supabase } from '../supabase';
+import { supabase } from '../../lib/supabase';
 
 interface EditJobModalProps {
     job: any;

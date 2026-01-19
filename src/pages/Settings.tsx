@@ -1,7 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../supabase';
+import { supabase } from '../lib/supabase';
+// import { supabase } from '../lib/supabase'; // Existing import
 import { Plus, Trash2, Truck } from 'lucide-react';
+import { playClickHaptic } from '../lib/ui-utils';
 
 const SettingsPage: React.FC = () => {
     const [machines, setMachines] = useState<any[]>([]);
@@ -11,16 +13,36 @@ const SettingsPage: React.FC = () => {
     const [newMachineName, setNewMachineName] = useState('');
     const [newMachineReg, setNewMachineReg] = useState('');
 
+
     // Default Rates State
     const [defaultAcreRate, setDefaultAcreRate] = useState('');
     const [defaultHourRate, setDefaultHourRate] = useState('');
 
+    // Appearance State
+    const [highContrast, setHighContrast] = useState(false);
+
+    // Initialize state from local storage
     useEffect(() => {
         const acre = localStorage.getItem('default_acre_rate');
         const hour = localStorage.getItem('default_hour_rate');
         if (acre) setDefaultAcreRate(acre);
         if (hour) setDefaultHourRate(hour);
+
+        const savedContrast = localStorage.getItem('high_contrast') === 'true';
+        setHighContrast(savedContrast);
     }, []);
+
+    // Sync High Contrast
+    useEffect(() => {
+        if (highContrast) {
+            document.body.classList.add('high-contrast');
+            localStorage.setItem('high_contrast', 'true');
+        } else {
+            document.body.classList.remove('high-contrast');
+            localStorage.setItem('high_contrast', 'false');
+        }
+    }, [highContrast]);
+
 
     const handleSaveRates = () => {
         localStorage.setItem('default_acre_rate', defaultAcreRate);
@@ -195,6 +217,47 @@ const SettingsPage: React.FC = () => {
                     >
                         Save Settings
                     </button>
+                </div>
+            </section>
+
+            {/* Appearance Settings */}
+            <section className="card" style={{ marginBottom: '2rem' }}>
+                <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-light)' }}>
+                    <h2 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Appearance</h2>
+                    <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Customize how the app looks.</p>
+                </div>
+                <div style={{ padding: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div>
+                            <div style={{ fontWeight: 600 }}>High Contrast Mode</div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Better visibility in bright sunlight</div>
+                        </div>
+                        <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '48px', height: '24px' }}>
+                            <input
+                                type="checkbox"
+                                checked={highContrast}
+                                onChange={(e) => {
+                                    playClickHaptic();
+                                    setHighContrast(e.target.checked);
+                                }}
+                                style={{ opacity: 0, width: 0, height: 0 }}
+                            />
+                            <span style={{
+                                position: 'absolute', cursor: 'pointer',
+                                top: 0, left: 0, right: 0, bottom: 0,
+                                backgroundColor: highContrast ? 'var(--primary)' : '#ccc',
+                                borderRadius: '24px',
+                                transition: '.4s'
+                            }}>
+                                <span style={{
+                                    position: 'absolute', content: '""', height: '16px', width: '16px',
+                                    left: highContrast ? '26px' : '4px', bottom: '4px',
+                                    backgroundColor: 'white', borderRadius: '50%',
+                                    transition: '.4s'
+                                }}></span>
+                            </span>
+                        </label>
+                    </div>
                 </div>
             </section>
         </div>

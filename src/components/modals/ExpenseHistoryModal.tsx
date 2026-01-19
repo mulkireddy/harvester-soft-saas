@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Search, Loader2, Trash2, Edit } from 'lucide-react';
-import { supabase } from '../supabase';
+import { supabase } from '../../lib/supabase';
 
 interface ExpenseHistoryModalProps {
     onClose: () => void;
@@ -21,7 +21,7 @@ const ExpenseHistoryModal: React.FC<ExpenseHistoryModalProps> = ({ onClose, onEd
     const fetchExpenses = async () => {
         setLoading(true);
         try {
-            let query = supabase
+            const query = supabase
                 .from('expenses')
                 .select(`
                     *,

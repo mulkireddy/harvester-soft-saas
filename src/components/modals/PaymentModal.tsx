@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { X, DollarSign, Loader2, Calendar, CreditCard } from 'lucide-react';
-import { supabase } from '../supabase';
+import { supabase } from '../../lib/supabase';
 
 interface PaymentModalProps {
     job: any;

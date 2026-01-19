@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Share2, Edit, Phone, FileText, Trash2 } from 'lucide-react';
-import '../mobile.css'; // Ensure mobile styles are available
 
 interface JobCardProps {
     job: any;

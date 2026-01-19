@@ -1,21 +1,22 @@
 
 import React, { useState, useEffect } from 'react';
-
-
-import { Users, Loader2, X, Check, Download } from 'lucide-react';
-import { supabase } from '../supabase';
-import PaymentModal from '../components/PaymentModal';
-import EditJobModal from '../components/EditJobModal';
-import '../mobile.css';
+import { Users, Loader2, X, Check, Download, Plus } from 'lucide-react';
+import Skeleton from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
+import { supabase } from '../lib/supabase';
+import { playSuccessHaptic, playErrorHaptic, playClickHaptic } from '../lib/ui-utils';
+import PaymentModal from '../components/modals/PaymentModal';
+import EditJobModal from '../components/modals/EditJobModal';
 import toast from 'react-hot-toast';
 
-import JobHistoryModal from '../components/JobHistoryModal';
-import JobCard from '../components/JobCard';
-import ReceiptModal from '../components/ReceiptModal';
+import JobHistoryModal from '../components/modals/JobHistoryModal';
+import JobCard from '../components/features/JobCard';
+import ReceiptModal from '../components/modals/ReceiptModal';
 
 type BillingMode = 'acre' | 'hour';
 
 const FarmersPage: React.FC = () => {
+    // ... (Keep existing state)
     const [billingMode, setBillingMode] = useState<BillingMode>('acre');
     const [measurement, setMeasurement] = useState<number | ''>(''); // Acres or Hours
     const [rate, setRate] = useState<number | ''>('');
@@ -35,7 +36,7 @@ const FarmersPage: React.FC = () => {
     // Loading & Data State
     const [isSaving, setIsSaving] = useState(false);
     const [recentJobs, setRecentJobs] = useState<any[]>([]);
-    // const [successMessage, setSuccessMessage] = useState<string | null>(null); // Removed for Toast
+    const [loadingJobs, setLoadingJobs] = useState(true); // New Loading State
     const [selectedJob, setSelectedJob] = useState<any>(null); // For Payment Modal
     const [editJob, setEditJob] = useState<any>(null); // For Edit Modal
     const [showHistory, setShowHistory] = useState(false);
@@ -47,33 +48,25 @@ const FarmersPage: React.FC = () => {
     const [userId, setUserId] = useState<string | null>(null);
     const [allVillages, setAllVillages] = useState<string[]>([]);
 
-    // Payment State
-
-    // Payment State
     // Payment State (Traffic Light)
     type PaymentType = 'Pending' | 'Partial' | 'Paid';
     const [paymentType, setPaymentType] = useState<PaymentType>('Pending');
-    // const [offerPayment, setOfferPayment] = useState<boolean>(false); // REMOVED
     const [paidAmount, setPaidAmount] = useState<number | ''>('');
     const [paymentMethod] = useState<string>('Cash');
-
-
-    // const paymentStatus = ... (Calculated automatically via buttons now)
 
     // Auto-fill logic for Traffic Light
     useEffect(() => {
         if (paymentType === 'Paid') {
-            setPaidAmount(total); // Auto-fill full amount internally
+            setPaidAmount(total);
         } else if (paymentType === 'Pending') {
             setPaidAmount('');
         } else if (paymentType === 'Partial') {
-            setPaidAmount(''); // Clear it so user can type freely without deleting '0'
+            setPaidAmount('');
         }
     }, [paymentType, total]);
 
     const checkMobile = async () => {
         if (!mobile || mobile.length < 5) return;
-
         try {
             const { data } = await supabase
                 .from('farmers')
@@ -85,13 +78,11 @@ const FarmersPage: React.FC = () => {
                 setExistingFarmerId(data.id);
                 setName(data.name);
                 setPlace(data.place || '');
-                // Optional: Toast or small indicator
+                playSuccessHaptic(); // Slight feedback on found
             } else {
                 setExistingFarmerId(null);
-                // Allow creating new
             }
         } catch (err) {
-            // Ignore error (e.g. not found)
             setExistingFarmerId(null);
         }
     };
@@ -100,11 +91,8 @@ const FarmersPage: React.FC = () => {
     useEffect(() => {
         const m = Number(measurement);
         const r = Number(rate);
-        if (!isNaN(m) && !isNaN(r)) {
-            setTotal(m * r);
-        } else {
-            setTotal(0);
-        }
+        if (!isNaN(m) && !isNaN(r)) setTotal(m * r);
+        else setTotal(0);
     }, [measurement, rate]);
 
     // Fetch User & Recent Jobs on Load
@@ -127,25 +115,21 @@ const FarmersPage: React.FC = () => {
     };
 
     const fetchRecentJobs = async () => {
+        setLoadingJobs(true);
         const { data, error } = await supabase
             .from('jobs')
-            .select(`
-                *,
-                farmers (name, place, mobile),
-                machines (name),
-                payments (*)
-            `)
+            .select(`*, farmers (name, place, mobile), machines (name), payments (*)`)
             .order('date', { ascending: false })
             .limit(5);
 
         if (data) setRecentJobs(data);
         if (error) console.error('Error fetching jobs:', error);
+        setLoadingJobs(false);
     };
 
     // Load Smart Defaults (User Scoped)
     useEffect(() => {
         if (!userId) return;
-
         const savedPlace = localStorage.getItem(`user_${userId}_default_place`);
         const savedRate = localStorage.getItem(`user_${userId}_default_rate`);
         const savedMachine = localStorage.getItem(`user_${userId}_default_machine`);
@@ -161,10 +145,7 @@ const FarmersPage: React.FC = () => {
             const { data } = await supabase.from('machines').select('*').order('name');
             if (data && data.length > 0) {
                 setMachines(data);
-                // Only default to first machine if we didn't load one from storage
-                if (!localStorage.getItem('default_machine')) {
-                    setSelectedMachine(data[0].id);
-                }
+                if (!localStorage.getItem('default_machine')) setSelectedMachine(data[0].id);
             }
         };
         fetchMachines();
@@ -172,6 +153,7 @@ const FarmersPage: React.FC = () => {
 
     const handleSave = async () => {
         if (!name || !measurement || !rate) {
+            playErrorHaptic();
             toast.error('Please fill in Name, Measurement, and Rate');
             return;
         }
@@ -181,21 +163,17 @@ const FarmersPage: React.FC = () => {
             let farmerId = existingFarmerId;
 
             if (!farmerId) {
-                // 1. Create New Farmer
                 const { data: farmerData, error: farmerError } = await supabase
                     .from('farmers')
                     .insert([{ name, mobile, place }])
                     .select()
                     .single();
-
                 if (farmerError) throw farmerError;
                 farmerId = farmerData.id;
             } else {
-                // Update existing farmer details just in case (optional, but good for sync)
                 await supabase.from('farmers').update({ name, place }).eq('id', farmerId);
             }
 
-            // 2. Create Job (Initialize as Pending with 0 paid)
             const { data: jobData, error: jobError } = await supabase
                 .from('jobs')
                 .insert([{
@@ -206,7 +184,7 @@ const FarmersPage: React.FC = () => {
                     quantity: Number(measurement),
                     rate: Number(rate),
                     total_amount: total,
-                    paid_amount: 0, // Will be updated by trigger if payment is added
+                    paid_amount: 0,
                     status: 'Pending',
                     date: new Date(jobDate).toISOString()
                 }])
@@ -215,7 +193,6 @@ const FarmersPage: React.FC = () => {
 
             if (jobError) throw jobError;
 
-            // 3. Add Initial Payment (if applicable)
             if (paymentType !== 'Pending' && Number(paidAmount) > 0) {
                 const { error: payError } = await supabase
                     .from('payments')
@@ -225,37 +202,30 @@ const FarmersPage: React.FC = () => {
                         method: paymentMethod,
                         date: new Date().toISOString()
                     }]);
-
                 if (payError) throw payError;
             }
 
-            // Success
+            playSuccessHaptic();
             toast.success('Record Saved Successfully!');
 
-            // Smart Defaults: Save for next time (User Scoped)
             if (userId) {
                 localStorage.setItem(`user_${userId}_default_place`, place);
                 localStorage.setItem(`user_${userId}_default_rate`, String(rate));
                 if (selectedMachine) localStorage.setItem(`user_${userId}_default_machine`, selectedMachine);
             }
 
-
-            // Reset Form (Optional: keep some fields or clear all)
             setName('');
             setMobile('');
-            // Keep Place & Rate (Smart Defaults for same session)
-            // setPlace(''); 
-            // setRate('');
             setMeasurement('');
             setPaidAmount('');
-            setPaymentType('Pending'); // Reset to default
-            setExistingFarmerId(null); // Reset
-            // Keep date as is or reset to today? Keep as is often useful for batch entry.
+            setPaymentType('Pending');
+            setExistingFarmerId(null);
 
-            // Refresh List
             fetchRecentJobs();
+            setShowForm(false); // Close form on mobile/desktop naturally
 
         } catch (error: any) {
+            playErrorHaptic();
             console.error('Error saving record:', error);
             toast.error('Error saving record: ' + error.message);
         } finally {
@@ -264,6 +234,7 @@ const FarmersPage: React.FC = () => {
     };
 
     const handleShare = (job: any) => {
+        playClickHaptic();
         if (!job.farmers?.mobile) {
             toast.error('No mobile number found for this farmer.');
             return;
@@ -271,7 +242,6 @@ const FarmersPage: React.FC = () => {
 
         const balance = job.total_amount - (job.paid_amount || 0);
         const dateStr = new Date(job.date).toLocaleDateString();
-
         const place = job.farmers.place ? ` (${job.farmers.place})` : '';
 
         const message = `*HARVEST BILL*%0A` +
@@ -289,24 +259,28 @@ const FarmersPage: React.FC = () => {
     };
 
     const handleCall = (mobile: string) => {
+        playClickHaptic();
         if (!mobile) return;
         window.open(`tel:${mobile}`);
     };
 
     const handleDelete = async (jobId: string) => {
         if (!confirm('Are you sure you want to delete this record? This cannot be undone.')) return;
+        playClickHaptic();
 
         const { error } = await supabase.from('jobs').delete().eq('id', jobId);
         if (error) {
+            playErrorHaptic();
             toast.error('Error deleting: ' + error.message);
         } else {
+            playSuccessHaptic();
             toast.success('Record Deleted');
-            // Update UI
             setRecentJobs(prev => prev.filter(j => j.id !== jobId));
         }
     };
 
     const handleExport = () => {
+        playClickHaptic();
         if (!recentJobs.length) return toast.error('No data to export');
 
         const headers = ['Date', 'Farmer', 'Village', 'Mobile', 'Crop', 'Machine', 'Mode', 'Qty', 'Rate', 'Total', 'Paid', 'Status'];
@@ -340,11 +314,9 @@ const FarmersPage: React.FC = () => {
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
             <header style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
-                    {/* Mobile optimization: Smaller title, tighter subtitle */}
                     <h1 style={{ fontSize: '1.5rem', marginBottom: '0.25rem', fontWeight: 700 }}>Farmers & Jobs</h1>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Manage records</span>
-                        {/* Integrated "Today" Badge inline for space saving */}
                         <div style={{
                             padding: '2px 8px', borderRadius: '12px', background: '#F0FDF4', color: '#15803D',
                             fontSize: '0.75rem', fontWeight: 700, border: '1px solid #BBF7D0'
@@ -364,8 +336,8 @@ const FarmersPage: React.FC = () => {
                         <Download size={20} />
                     </button>
                     <button
-                        onClick={() => setShowForm(!showForm)}
-                        className="btn btn-primary"
+                        onClick={() => { playClickHaptic(); setShowForm(!showForm); }}
+                        className="btn btn-primary hide-on-mobile"
                         style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', borderRadius: '8px', minHeight: '40px' }}
                     >
                         {showForm ? 'Cancel' : 'New Entry'}
@@ -373,12 +345,18 @@ const FarmersPage: React.FC = () => {
                 </div>
             </header>
 
-            {/* Replaced old "Today" summary section (now integrated above) with invisible spacer if needed, or just nothing.
-                Actually, let's keep the Form Toggle here if we want? No, moved to header right.
-            */}
+            {/* FAB for Mobile */}
+            <div className="fab-container">
+                <button
+                    className="fab-btn"
+                    onClick={() => { playClickHaptic(); setShowForm(!showForm); }}
+                    style={{ transform: showForm ? 'rotate(45deg)' : 'rotate(0)' }}
+                >
+                    <Plus size={28} />
+                </button>
+            </div>
 
-
-            {/* New Record Card (Collapsible) */}
+            {/* Form Section - Auto scroll to it when shown on mobile? */}
             {showForm && (
                 <div className="card" style={{ marginBottom: '2rem', animation: 'fadeIn 0.2s ease-out' }}>
                     <h2 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -386,11 +364,8 @@ const FarmersPage: React.FC = () => {
                         <button onClick={() => setShowForm(false)} style={{ color: 'var(--text-secondary)' }}><X size={20} /></button>
                     </h2>
 
-                    {/* successMessage logic removed - using toast now */}
-
                     <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
-                        {/* Row 1: Who (Mobile & Name) */}
-                        {/* Row 1: Farmer Name (Full Width) */}
+                        {/* Fields remain mostly same, just ensuring compact inputs work */}
                         <div className="input-group" style={{ marginBottom: '0.75rem' }}>
                             <label className="label" style={{ fontSize: '0.75rem' }}>Farmer Name</label>
                             <div style={{ position: 'relative' }}>
@@ -407,7 +382,6 @@ const FarmersPage: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Row 2: Mobile & Date */}
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
                             <div className="input-group" style={{ marginBottom: 0 }}>
                                 <label className="label" style={{ fontSize: '0.75rem' }}>Mobile</label>
@@ -433,7 +407,6 @@ const FarmersPage: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Row 3: Village & Crop */}
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
                             <div className="input-group" style={{ marginBottom: 0 }}>
                                 <label className="label" style={{ fontSize: '0.75rem' }}>Village</label>
@@ -463,7 +436,6 @@ const FarmersPage: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Row 3: Machine & Billing (Merged) */}
                         <div className="input-group" style={{ marginBottom: '0.75rem' }}>
                             <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '4px' }}>
                                 {machines.map(m => (
@@ -477,7 +449,7 @@ const FarmersPage: React.FC = () => {
                                             padding: '0.4rem 0.8rem', fontSize: '0.75rem', whiteSpace: 'nowrap',
                                             borderRadius: '20px'
                                         }}
-                                        onClick={() => setSelectedMachine(m.id)}
+                                        onClick={() => { playClickHaptic(); setSelectedMachine(m.id); }}
                                     >
                                         {m.name}
                                     </button>
@@ -485,7 +457,6 @@ const FarmersPage: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Row 4: Pricing (Qty + Rate = Total) - SUPER COMPACT */}
                         <div style={{
                             display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', gap: '0.5rem', marginBottom: '1rem',
                             background: '#F9FAFB', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-light)'
@@ -525,14 +496,13 @@ const FarmersPage: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Row 5: Payment (Compact Traffic Light) */}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '1rem' }}>
                             <div style={{ display: 'flex', background: '#F3F4F6', padding: '3px', borderRadius: '8px', flex: 1 }}>
                                 {(['Pending', 'Partial', 'Paid'] as const).map((status) => (
                                     <button
                                         key={status}
                                         type="button"
-                                        onClick={() => setPaymentType(status)}
+                                        onClick={() => { playClickHaptic(); setPaymentType(status); }}
                                         style={{
                                             flex: 1,
                                             padding: '0.4rem',
@@ -550,7 +520,6 @@ const FarmersPage: React.FC = () => {
                                 ))}
                             </div>
 
-                            {/* Quick Pay Input (Only if Partial) */}
                             {paymentType === 'Partial' && (
                                 <div style={{ flex: 0.7, animation: 'fadeIn 0.2s' }}>
                                     <input
@@ -581,22 +550,42 @@ const FarmersPage: React.FC = () => {
                 </div >
             )}
 
-
-            {/* Recent Records Layout Fix */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', gap: '1rem' }}>
                 <h3 style={{ margin: 0, fontSize: '1.1rem', whiteSpace: 'nowrap' }}>Recent Records</h3>
-                <button className="btn btn-secondary" onClick={() => setShowHistory(true)} style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', height: 'auto', whiteSpace: 'nowrap' }}>
+                <button
+                    className="btn btn-secondary"
+                    onClick={() => { playClickHaptic(); setShowHistory(true); }}
+                    style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', height: 'auto', whiteSpace: 'nowrap' }}
+                >
                     View All
                 </button>
             </div>
 
             {
-                recentJobs.length === 0 ? (
+                loadingJobs ? (
+                    <div style={{ display: 'grid', gap: '1rem' }}>
+                        {Array(3).fill(0).map((_, i) => (
+                            <div key={i} className="card" style={{ padding: '1rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                        <Skeleton width={120} height={20} />
+                                        <Skeleton width={80} height={15} />
+                                    </div>
+                                    <Skeleton width={60} height={24} />
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem' }}>
+                                    <Skeleton width={80} height={15} />
+                                    <Skeleton width={100} height={28} />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : recentJobs.length === 0 ? (
                     <div className="card" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
                         <div style={{ marginBottom: '1rem', display: 'inline-flex', padding: '1rem', background: 'var(--bg-main)', borderRadius: '50%' }}>
                             <Users size={32} />
                         </div>
-                        <p>No records yet. Start by adding a farmer above.</p>
+                        <p>No records yet. Tap + to add one.</p>
                     </div>
                 ) : (
                     <div style={{ display: 'grid', gap: '1rem' }}>
@@ -604,82 +593,57 @@ const FarmersPage: React.FC = () => {
                             <JobCard
                                 key={job.id}
                                 job={job}
-                                onShare={handleShare}
-                                onEdit={setEditJob}
-                                onDelete={handleDelete}
-                                onPay={setSelectedJob}
-                                onCall={handleCall}
-                                onReceipt={setSelectedReceiptJob}
+                                onShare={(j) => handleShare(j)}
+                                onEdit={(j) => { playClickHaptic(); setEditJob(j); }}
+                                onDelete={(id) => handleDelete(id)}
+                                onPay={(j) => { playClickHaptic(); setSelectedJob(j); }}
+                                onCall={(m) => handleCall(m)}
+                                onReceipt={(j) => { playClickHaptic(); setSelectedReceiptJob(j); }}
                             />
                         ))}
                     </div>
                 )
             }
 
-            {/* Payment Modal */}
-            {
-                selectedJob && (
-                    <PaymentModal
-                        job={selectedJob}
-                        onClose={() => setSelectedJob(null)}
-                        onSuccess={(result) => {
-                            toast.success('Payment Updated!');
-                            // setTimeout(() => setSuccessMessage(null), 3000);
-
-                            // Optimistic Update with REAL data from modal
-                            if (result) {
-                                setRecentJobs(prev => prev.map(j => {
-                                    if (j.id === selectedJob.id) {
-                                        return {
-                                            ...j,
-                                            status: result.newStatus,
-                                            paid_amount: result.newPaidAmount
-                                        };
-                                    }
-                                    return j;
-                                }));
-                            }
-
-                            // Then fetch from DB to be sure (sync)
-                            setTimeout(() => {
-                                fetchRecentJobs();
-                            }, 1000);
-                        }}
-                    />
-                )
-            }
-            {/* Edit Job Modal */}
-            {
-                editJob && (
-                    <EditJobModal
-                        job={editJob}
-                        machines={machines}
-                        onClose={() => setEditJob(null)}
-                        onSuccess={() => {
-                            toast.success('Record Updated!');
-                            // setTimeout(() => setSuccessMessage(null), 3000);
-                            fetchRecentJobs();
-                        }}
-                    />
-                )
-            }
-
-            {/* History Modal */}
+            {/* Modals - Keeping them as is */}
+            {selectedJob && (
+                <PaymentModal
+                    job={selectedJob}
+                    onClose={() => setSelectedJob(null)}
+                    onSuccess={(result) => {
+                        playSuccessHaptic();
+                        toast.success('Payment Updated!');
+                        if (result) {
+                            setRecentJobs(prev => prev.map(j => {
+                                if (j.id === selectedJob.id) {
+                                    return { ...j, status: result.newStatus, paid_amount: result.newPaidAmount };
+                                }
+                                return j;
+                            }));
+                        }
+                        setTimeout(() => fetchRecentJobs(), 1000);
+                    }}
+                />
+            )}
+            {editJob && (
+                <EditJobModal
+                    job={editJob}
+                    machines={machines}
+                    onClose={() => setEditJob(null)}
+                    onSuccess={() => { playSuccessHaptic(); toast.success('Record Updated!'); fetchRecentJobs(); }}
+                />
+            )}
             {showHistory && (
                 <JobHistoryModal
                     onClose={() => setShowHistory(false)}
                     onShare={handleShare}
                     onEdit={setEditJob}
-                    onDelete={(id) => {
-                        // We can delete here, but we should also update the local recent list if it was there
-                        handleDelete(id);
-                    }}
+                    onDelete={handleDelete}
                     onPay={setSelectedJob}
                     onCall={handleCall}
                     onReceipt={setSelectedReceiptJob}
                 />
             )}
-            {/* Receipt Modal */}
             {selectedReceiptJob && (
                 <ReceiptModal
                     job={selectedReceiptJob}
@@ -690,5 +654,5 @@ const FarmersPage: React.FC = () => {
     );
 };
 
-
 export default FarmersPage;
+

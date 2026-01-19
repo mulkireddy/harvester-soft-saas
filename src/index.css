@@ -159,4 +159,417 @@ a {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(255, 56, 92, 0.1);
+}/* Mobile-First Grid System */
+.grid-responsive {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    /* Standard mobile gap (12px) */
+}
+
+@media (min-width: 640px) {
+    .grid-2 {
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        /* Restore larger gap for desktop */
+    }
+
+    .grid-3 {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    .col-span-2 {
+        grid-column: span 2;
+    }
+}
+
+/* --- Responsive Layout System --- */
+
+.layout-container {
+    display: flex;
+    min-height: 100vh;
+    background-color: var(--bg-main);
+}
+
+/* Sidebar (Desktop) */
+.desktop-sidebar {
+    width: 260px;
+    background-color: #FFFFFF;
+    border-right: 1px solid var(--border-light);
+    padding: 2rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 1rem;
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.nav-item.active {
+    background-color: #FFF0F3;
+    /* Soft red bg */
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.nav-item:hover:not(.active) {
+    background-color: #f5f5f5;
+    color: var(--text-main);
+}
+
+/* Main Content Area */
+.main-content {
+    flex: 1;
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Mobile Header & Nav (Hidden by default on Desktop) */
+.mobile-header {
+    display: none;
+}
+
+.mobile-bottom-nav {
+    display: none;
+}
+
+/* Job Card Desktop Defaults */
+.job-card-container {
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.job-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+}
+
+.icon-btn {
+    border: none;
+    background: #f3f4f6;
+    color: #4b5563;
+    border-radius: 8px;
+    padding: 0.4rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.primary-action-btn {
+    font-size: 0.8rem;
+    padding: 0.35rem 0.85rem;
+    background: #FFF0F3;
+    color: var(--primary);
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.show-on-mobile {
+    display: none;
+}
+
+/* Stats Card Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+/* --- Mobile Styles (< 768px) --- */
+@media (max-width: 768px) {
+    .layout-container {
+        flex-direction: column;
+    }
+
+    .desktop-sidebar {
+        display: none;
+        /* Hide sidebar */
+    }
+
+    /* Mobile Header */
+    .mobile-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 1rem;
+        background-color: #FFFFFF;
+        border-bottom: 1px solid var(--border-light);
+        position: sticky;
+        top: 0;
+        z-index: 50;
+    }
+
+    /* Main Content Adjustments */
+    .main-content {
+        padding: 1rem;
+        padding-bottom: 5rem;
+        /* Space for bottom nav */
+    }
+
+    /* Bottom Navigation */
+    .mobile-bottom-nav {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: #FFFFFF;
+        border-top: 1px solid var(--border-light);
+        padding-bottom: env(safe-area-inset-bottom);
+        height: calc(3.5rem + env(safe-area-inset-bottom));
+        z-index: 100;
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .mobile-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 0.5rem 0.25rem;
+        color: var(--text-secondary);
+        gap: 2px;
+        transition: color 0.2s ease;
+    }
+
+    .mobile-nav-item.active {
+        color: var(--primary);
+    }
+
+    .mobile-nav-item span {
+        font-size: 0.65rem;
+        font-weight: 500;
+    }
+
+    /* Stats Grid Mobile */
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        /* 2 columns on mobile */
+        gap: 0.75rem;
+    }
+
+    /* Job Card Mobile Stacking */
+    .job-card-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 1rem;
+    }
+
+    .job-info {
+        width: 100%;
+        border-bottom: 1px dashed var(--border-light);
+        padding-bottom: 0.75rem;
+        margin-bottom: 0px;
+        /* Reduced gap */
+    }
+
+    .job-actions {
+        width: 100%;
+        align-items: center;
+        flex-direction: row;
+        justify-content: space-between;
+    }
+
+    .icon-btn {
+        padding: 0.5rem;
+        border-radius: 8px;
+    }
+
+    .primary-action-btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+    }
+
+    .show-on-mobile {
+        display: block;
+    }
+
+    .hide-on-mobile {
+        display: none !important;
+    }
+
+    /* Modals Response Fixes */
+    .modal-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+        /* Sheet style */
+        margin: 0 !important;
+        padding: 1.25rem !important;
+        position: absolute !important;
+        bottom: 0 !important;
+        max-height: 85vh !important;
+        overflow-y: auto;
+        animation: slideUp 0.3s ease-out;
+    }
+
+    @keyframes slideUp {
+        from {
+            transform: translateY(100%);
+        }
+
+        to {
+            transform: translateY(0);
+        }
+    }
+}
+
+/* Global Mobile Fixes */
+@media (max-width: 640px) {
+
+    /* Standardize Cards */
+    .card {
+        padding: 1rem !important;
+        border-radius: var(--radius-md);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        /* Softer shadow for mobile */
+    }
+
+    /* Tighter Headers */
+    h1 {
+        font-size: 1.5rem !important;
+        margin-bottom: 0.5rem !important;
+        /* Visual hierarchy */
+    }
+
+    header {
+        margin-bottom: 1.25rem !important;
+        /* Reduce gap before content */
+    }
+
+    /* Full Width Inputs/Buttons */
+    .btn {
+        width: 100%;
+        padding: 0.75rem;
+        /* Slightly less than 0.875rem for compactness */
+        min-height: 44px;
+    }
+
+    input:not(.input-compact),
+    select:not(.input-compact),
+    textarea:not(.input-compact) {
+        font-size: 16px !important;
+        /* Prevent zoom on focus */
+        min-height: 44px;
+        /* Standard touch target */
+    }
+
+    /* High Density Form Mode */
+    .input-compact {
+        min-height: 38px !important;
+        font-size: 14px !important;
+        padding: 0.35rem 0.6rem !important;
+        border-radius: 8px !important;
+    }
+
+
+    .btn-sm {
+        min-height: 38px !important;
+        padding: 0 1rem !important;
+        font-size: 0.85rem !important;
+    }
+}
+
+/* --- Floating Action Button (Thumb Zone) --- */
+.fab-container {
+    position: fixed;
+    bottom: calc(4rem + env(safe-area-inset-bottom));
+    /* Above bottom nav */
+    right: 1.5rem;
+    z-index: 90;
+    display: none;
+    /* Hidden on desktop by default */
+}
+
+@media (max-width: 768px) {
+    .fab-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-end;
+    }
+
+    .fab-btn {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--primary);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(255, 56, 92, 0.4);
+        border: none;
+        cursor: pointer;
+        transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .fab-btn:active {
+        transform: scale(0.9);
+    }
+
+    .fab-label {
+        position: absolute;
+        right: 70px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+}
+
+/* --- High Contrast Mode --- */
+body.high-contrast {
+    --bg-main: #FFFFFF;
+    --bg-card: #FFFFFF;
+    --text-main: #000000;
+    --text-secondary: #000000;
+    --border-light: #000000;
+    --primary: #000000;
+    /* Or a very dark blue/red */
+    --primary-hover: #333333;
+}
+
+body.high-contrast .card {
+    border: 2px solid #000000;
+    box-shadow: none;
+}
+
+body.high-contrast .btn-primary {
+    background: #000000;
+    color: #FFFFFF;
+    border: 2px solid black;
+    /* Ensure visibility */
+}
+
+body.high-contrast .nav-item.active,
+body.high-contrast .mobile-nav-item.active {
+    color: #000000;
+    background: #FFFF00;
+    /* Yellow highlight for contrast */
+    font-weight: 900;
 }

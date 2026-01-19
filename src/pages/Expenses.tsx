@@ -1,9 +1,13 @@
+
 import React, { useState, useEffect } from 'react';
-import { Droplet, Wrench, User, Coffee, CreditCard, Trash2, Loader2, Download, Landmark, Edit, X } from 'lucide-react';
-import { supabase } from '../supabase';
-import EditExpenseModal from '../components/EditExpenseModal';
-import ExpenseHistoryModal from '../components/ExpenseHistoryModal';
-import '../mobile.css';
+import { Droplet, Wrench, User, Coffee, CreditCard, Trash2, Loader2, Download, Landmark, Edit, X, Plus } from 'lucide-react';
+import Skeleton from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
+import { supabase } from '../lib/supabase';
+import { playSuccessHaptic, playErrorHaptic, playClickHaptic } from '../lib/ui-utils';
+import EditExpenseModal from '../components/modals/EditExpenseModal';
+import ExpenseHistoryModal from '../components/modals/ExpenseHistoryModal';
+import toast from 'react-hot-toast';
 
 const CATEGORIES = [
     { id: 'Fuel', label: 'Diesel / Fuel', icon: Droplet, color: '#FEE2E2', textColor: '#991B1B' },
@@ -45,10 +49,7 @@ const ExpensesPage: React.FC = () => {
         setLoading(true);
         const { data } = await supabase
             .from('expenses')
-            .select(`
-                *,
-                machines (name)
-            `)
+            .select(`*, machines (name)`)
             .order('date', { ascending: false })
             .limit(20);
 
@@ -58,7 +59,11 @@ const ExpensesPage: React.FC = () => {
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!amount) return;
+        playClickHaptic();
+        if (!amount) {
+            playErrorHaptic();
+            return;
+        }
 
         setIsSaving(true);
         try {
@@ -74,6 +79,9 @@ const ExpensesPage: React.FC = () => {
 
             if (error) throw error;
 
+            playSuccessHaptic();
+            toast.success('Expense Saved');
+
             // Reset & Refresh
             setAmount('');
             setDescription('');
@@ -81,8 +89,9 @@ const ExpensesPage: React.FC = () => {
             setShowForm(false); // Close form after save
 
         } catch (err) {
+            playErrorHaptic();
             console.error(err);
-            alert('Error saving expense');
+            toast.error('Error saving expense');
         } finally {
             setIsSaving(false);
         }
@@ -90,13 +99,22 @@ const ExpensesPage: React.FC = () => {
 
     const handleDelete = async (id: string) => {
         if (!confirm('Are you sure you want to delete this expense?')) return;
+        playClickHaptic();
 
         const { error } = await supabase.from('expenses').delete().eq('id', id);
-        if (!error) fetchExpenses();
+        if (!error) {
+            playSuccessHaptic();
+            toast.success('Expense Deleted');
+            fetchExpenses();
+        } else {
+            playErrorHaptic();
+            toast.error('Error deleting expense');
+        }
     };
 
     const handleExport = () => {
-        if (!recentExpenses.length) return alert('No data to export');
+        playClickHaptic();
+        if (!recentExpenses.length) return toast.error('No data to export');
 
         const headers = ['Date', 'Category', 'Description', 'Machine', 'Amount'];
         const csvContent = [
@@ -130,14 +148,25 @@ const ExpensesPage: React.FC = () => {
                         <Download size={20} />
                     </button>
                     <button
-                        onClick={() => setShowForm(!showForm)}
-                        className="btn btn-primary"
+                        onClick={() => { playClickHaptic(); setShowForm(!showForm); }}
+                        className="btn btn-primary hide-on-mobile"
                         style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', borderRadius: '8px', minHeight: '40px' }}
                     >
                         {showForm ? 'Cancel' : 'New Entry'}
                     </button>
                 </div>
             </header>
+
+            {/* FAB for Mobile */}
+            <div className="fab-container">
+                <button
+                    className="fab-btn"
+                    onClick={() => { playClickHaptic(); setShowForm(!showForm); }}
+                    style={{ transform: showForm ? 'rotate(45deg)' : 'rotate(0)' }}
+                >
+                    <Plus size={28} />
+                </button>
+            </div>
 
             {/* Entry Form */}
             {showForm && (
@@ -154,7 +183,7 @@ const ExpensesPage: React.FC = () => {
                                 <button
                                     key={cat.id}
                                     type="button"
-                                    onClick={() => setCategory(cat.id)}
+                                    onClick={() => { playClickHaptic(); setCategory(cat.id); }}
                                     style={{
                                         display: 'flex', alignItems: 'center', gap: '6px',
                                         padding: '0.4rem 0.8rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 500,
@@ -239,13 +268,28 @@ const ExpensesPage: React.FC = () => {
             {/* Expenses List */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', gap: '1rem' }}>
                 <h3 style={{ margin: 0, fontSize: '1.1rem', whiteSpace: 'nowrap' }}>Recent History</h3>
-                <button className="btn btn-secondary" onClick={() => setShowHistory(true)} style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', height: 'auto', whiteSpace: 'nowrap' }}>
+                <button
+                    className="btn btn-secondary"
+                    onClick={() => { playClickHaptic(); setShowHistory(true); }}
+                    style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', height: 'auto', whiteSpace: 'nowrap' }}
+                >
                     View All
                 </button>
             </div>
 
             {loading ? (
-                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}><Loader2 className="animate-spin" /></div>
+                <div style={{ display: 'grid', gap: '1rem' }}>
+                    {Array(3).fill(0).map((_, i) => (
+                        <div key={i} className="card" style={{ padding: '1rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                            <Skeleton width={40} height={40} borderRadius={10} />
+                            <div style={{ flex: 1 }}>
+                                <Skeleton width="40%" height={16} style={{ marginBottom: '4px' }} />
+                                <Skeleton width="30%" height={12} />
+                            </div>
+                            <Skeleton width={60} height={20} />
+                        </div>
+                    ))}
+                </div>
             ) : recentExpenses.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
                     <p>No expenses recorded yet.</p>
@@ -298,7 +342,7 @@ const ExpensesPage: React.FC = () => {
                                     </div>
                                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                                         <button
-                                            onClick={() => setEditExpense(expense)}
+                                            onClick={() => { playClickHaptic(); setEditExpense(expense); }}
                                             style={{ padding: '4px', background: '#EFF6FF', color: '#3B82F6', borderRadius: '4px', border: 'none' }}
                                         >
                                             <Edit size={14} />
@@ -324,6 +368,8 @@ const ExpensesPage: React.FC = () => {
                     categories={CATEGORIES}
                     onClose={() => setEditExpense(null)}
                     onSuccess={() => {
+                        playSuccessHaptic();
+                        toast.success('Expense Updated');
                         fetchExpenses();
                     }}
                 />
@@ -332,7 +378,7 @@ const ExpensesPage: React.FC = () => {
             {showHistory && (
                 <ExpenseHistoryModal
                     onClose={() => setShowHistory(false)}
-                    onEdit={(e) => { setEditExpense(e); setShowHistory(false); }}
+                    onEdit={(e) => { playClickHaptic(); setEditExpense(e); setShowHistory(false); }}
                     onDelete={handleDelete}
                     categories={CATEGORIES}
                 />
@@ -342,3 +388,4 @@ const ExpensesPage: React.FC = () => {
 };
 
 export default ExpensesPage;
+

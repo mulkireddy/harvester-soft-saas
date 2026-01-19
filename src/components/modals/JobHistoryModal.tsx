@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Search, Loader2 } from 'lucide-react';
-import { supabase } from '../supabase';
-import JobCard from './JobCard';
+import { supabase } from '../../lib/supabase';
+import JobCard from '../features/JobCard';
 
 interface JobHistoryModalProps {
     onClose: () => void;
@@ -26,7 +26,7 @@ const JobHistoryModal: React.FC<JobHistoryModalProps> = ({ onClose, onShare, onE
     const fetchJobs = async () => {
         setLoading(true);
         try {
-            let query = supabase
+            const query = supabase
                 .from('jobs')
                 .select(`
                     *,

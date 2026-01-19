@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { TrendingUp, TrendingDown, Wallet, AlertCircle, ArrowUpRight, ArrowDownRight, Sprout } from 'lucide-react';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
-import { supabase } from '../supabase';
-import VillageLeaderboard from '../components/analytics/VillageLeaderboard';
+import { supabase } from '../lib/supabase';
+import VillageLeaderboard from '../components/features/analytics/VillageLeaderboard';
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../supabase';
+import { supabase } from '../../lib/supabase';
 import { Delete, LogOut, Lock } from 'lucide-react';
 
 interface PinLockProps {
