@@ -311,7 +311,7 @@ const FarmersPage: React.FC = () => {
     };
 
     return (
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+        <div style={{ width: '100%', maxWidth: '800px', margin: '0 auto' }}>
             <header style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                     <h1 style={{ fontSize: '1.5rem', marginBottom: '0.25rem', fontWeight: 700 }}>Farmers & Jobs</h1>
@@ -358,7 +358,7 @@ const FarmersPage: React.FC = () => {
 
             {/* Form Section - Auto scroll to it when shown on mobile? */}
             {showForm && (
-                <div className="card" style={{ marginBottom: '2rem', animation: 'fadeIn 0.2s ease-out' }}>
+                <div className="card" style={{ marginBottom: '2rem', animation: 'fadeIn 0.2s ease-out', width: '100%' }}>
                     <h2 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         New Work Record
                         <button onClick={() => setShowForm(false)} style={{ color: 'var(--text-secondary)' }}><X size={20} /></button>
@@ -563,9 +563,9 @@ const FarmersPage: React.FC = () => {
 
             {
                 loadingJobs ? (
-                    <div style={{ display: 'grid', gap: '1rem' }}>
+                    <div style={{ display: 'grid', gap: '1rem', width: '100%' }}>
                         {Array(3).fill(0).map((_, i) => (
-                            <div key={i} className="card" style={{ padding: '1rem' }}>
+                            <div key={i} className="card" style={{ padding: '1rem', width: '100%' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                         <Skeleton width={120} height={20} />
@@ -588,18 +588,19 @@ const FarmersPage: React.FC = () => {
                         <p>No records yet. Tap + to add one.</p>
                     </div>
                 ) : (
-                    <div style={{ display: 'grid', gap: '1rem' }}>
+                    <div style={{ display: 'grid', gap: '1rem', width: '100%' }}>
                         {recentJobs.map((job) => (
-                            <JobCard
-                                key={job.id}
-                                job={job}
-                                onShare={(j) => handleShare(j)}
-                                onEdit={(j) => { playClickHaptic(); setEditJob(j); }}
-                                onDelete={(id) => handleDelete(id)}
-                                onPay={(j) => { playClickHaptic(); setSelectedJob(j); }}
-                                onCall={(m) => handleCall(m)}
-                                onReceipt={(j) => { playClickHaptic(); setSelectedReceiptJob(j); }}
-                            />
+                            <div key={job.id} style={{ width: '100%' }}>
+                                <JobCard
+                                    job={job}
+                                    onShare={(j) => handleShare(j)}
+                                    onEdit={(j) => { playClickHaptic(); setEditJob(j); }}
+                                    onDelete={(id) => handleDelete(id)}
+                                    onPay={(j) => { playClickHaptic(); setSelectedJob(j); }}
+                                    onCall={(m) => handleCall(m)}
+                                    onReceipt={(j) => { playClickHaptic(); setSelectedReceiptJob(j); }}
+                                />
+                            </div>
                         ))}
                     </div>
                 )
