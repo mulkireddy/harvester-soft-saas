@@ -10,7 +10,18 @@ interface ExpensePieChartProps {
     }[];
 }
 
+const RADIAN = Math.PI / 180;
+const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
+    return percent > 0.05 ? (
+        <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={12} fontWeight={600}>
+            {`${(percent * 100).toFixed(0)}%`}
+        </text>
+    ) : null;
+};
 
 const ExpensePieChart: React.FC<ExpensePieChartProps> = ({ data }) => {
     // If no data, show empty state
@@ -22,9 +33,6 @@ const ExpensePieChart: React.FC<ExpensePieChartProps> = ({ data }) => {
         );
     }
 
-    // Airbnb/Stripe Pastel Palette
-    const COLORS = ['#00A699', '#FF5A5F', '#FC642D', '#484848', '#FFB400', '#767676'];
-
     return (
         <div style={{ height: '300px', width: '100%' }}>
             <ResponsiveContainer width="100%" height="100%">
@@ -33,32 +41,18 @@ const ExpensePieChart: React.FC<ExpensePieChartProps> = ({ data }) => {
                         data={data}
                         cx="50%"
                         cy="50%"
-                        innerRadius={60}
+                        labelLine={false}
+                        label={renderCustomizedLabel}
                         outerRadius={100}
-                        paddingAngle={5}
-                        cornerRadius={6}
+                        fill="#8884d8"
                         dataKey="value"
                     >
-                        {data.map((_, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="none" />
+                        {data.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                     </Pie>
-                    <Tooltip
-                        contentStyle={{
-                            borderRadius: '12px',
-                            border: '1px solid #E5E7EB',
-                            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                            padding: '12px',
-                            fontFamily: 'Inter, sans-serif'
-                        }}
-                    />
-                    <Legend
-                        layout="vertical"
-                        verticalAlign="middle"
-                        align="right"
-                        iconType="circle"
-                        wrapperStyle={{ fontSize: '11px', color: '#4B5563' }}
-                    />
+                    <Tooltip />
+                    <Legend layout="vertical" verticalAlign="middle" align="right" />
                 </PieChart>
             </ResponsiveContainer>
         </div>
