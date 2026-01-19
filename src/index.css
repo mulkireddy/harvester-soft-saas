@@ -161,19 +161,17 @@ a {
     box-shadow: 0 0 0 3px rgba(255, 56, 92, 0.1);
 }
 
-/* Mobile-First Grid System */
+/* Mobile-First Grid System (Restored) */
 .grid-responsive {
     display: grid;
     grid-template-columns: 1fr;
     gap: 0.75rem;
-    /* Standard mobile gap (12px) */
 }
 
 @media (min-width: 640px) {
     .grid-2 {
         grid-template-columns: 1fr 1fr;
         gap: 1.5rem;
-        /* Restore larger gap for desktop */
     }
 
     .grid-3 {
@@ -181,130 +179,168 @@ a {
     }
 
     .col-span-2 {
-        justify-content: space-between;
-        padding: 0.75rem 1rem;
-        background-color: #FFFFFF;
-        border-bottom: 1px solid var(--border-light);
-        position: sticky;
-        top: 0;
-        z-index: 50;
+        grid-column: span 2;
     }
+}
 
-    /* Main Content Adjustments */
+/* --- Mobile-First Layout System --- */
+
+
+.layout-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: var(--bg-main);
+    width: 100%;
+}
+
+/* Mobile Header */
+.mobile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background-color: #FFFFFF;
+    border-bottom: 1px solid var(--border-light);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    width: 100%;
+}
+
+/* Main Content Area */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    padding-bottom: 6rem;
+    /* Space for bottom nav */
+    width: 100%;
+    margin: 0 auto;
+    max-width: 100%;
+}
+
+/* Bottom Navigation */
+.mobile-bottom-nav {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #FFFFFF;
+    border-top: 1px solid var(--border-light);
+    padding-bottom: env(safe-area-inset-bottom);
+    height: calc(3.5rem + env(safe-area-inset-bottom));
+    z-index: 100;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+}
+
+@media (min-width: 768px) {
+    /* Tablet/Desktop: Constrain content width for readability, but keep header/nav full width or centered if desired.
+       Let's keep it full width for now to avoid the "weirdness" user complained about. 
+       Or maybe just limit the main content max-width. */
+
     .main-content {
-        padding: 1rem;
-        padding-bottom: 5rem;
-        /* Space for bottom nav */
+        max-width: 800px;
+        /* Sensible max width for content */
+        margin: 0 auto;
+    }
+}
+
+.mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 0.25rem;
+    color: var(--text-secondary);
+    gap: 2px;
+    transition: color 0.2s ease;
+}
+
+.mobile-nav-item.active {
+    color: var(--primary);
+}
+
+.mobile-nav-item span {
+    font-size: 0.65rem;
+    font-weight: 500;
+}
+
+/* Stats Grid Mobile */
+.stats-grid {
+    grid-template-columns: 1fr 1fr;
+    /* 2 columns on mobile */
+    gap: 0.75rem;
+}
+
+/* Job Card Mobile Stacking */
+.job-card-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+}
+
+.job-info {
+    width: 100%;
+    border-bottom: 1px dashed var(--border-light);
+    padding-bottom: 0.75rem;
+    margin-bottom: 0px;
+    /* Reduced gap */
+}
+
+.job-actions {
+    width: 100%;
+    align-items: center;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.icon-btn {
+    padding: 0.5rem;
+    border-radius: 8px;
+}
+
+.primary-action-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+}
+
+.show-on-mobile {
+    display: block;
+}
+
+.hide-on-mobile {
+    display: none !important;
+}
+
+/* Modals Response Fixes */
+.modal-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+    /* Sheet style */
+    margin: 0 !important;
+    padding: 1.25rem !important;
+    position: absolute !important;
+    bottom: 0 !important;
+    max-height: 85vh !important;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
     }
 
-    /* Bottom Navigation */
-    .mobile-bottom-nav {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background-color: #FFFFFF;
-        border-top: 1px solid var(--border-light);
-        padding-bottom: env(safe-area-inset-bottom);
-        height: calc(3.5rem + env(safe-area-inset-bottom));
-        z-index: 100;
-        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+    to {
+        transform: translateY(0);
     }
-
-    .mobile-nav-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 0.5rem 0.25rem;
-        color: var(--text-secondary);
-        gap: 2px;
-        transition: color 0.2s ease;
-    }
-
-    .mobile-nav-item.active {
-        color: var(--primary);
-    }
-
-    .mobile-nav-item span {
-        font-size: 0.65rem;
-        font-weight: 500;
-    }
-
-    /* Stats Grid Mobile */
-    .stats-grid {
-        grid-template-columns: 1fr 1fr;
-        /* 2 columns on mobile */
-        gap: 0.75rem;
-    }
-
-    /* Job Card Mobile Stacking */
-    .job-card-container {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.75rem;
-        padding: 1rem;
-    }
-
-    .job-info {
-        width: 100%;
-        border-bottom: 1px dashed var(--border-light);
-        padding-bottom: 0.75rem;
-        margin-bottom: 0px;
-        /* Reduced gap */
-    }
-
-    .job-actions {
-        width: 100%;
-        align-items: center;
-        flex-direction: row;
-        justify-content: space-between;
-    }
-
-    .icon-btn {
-        padding: 0.5rem;
-        border-radius: 8px;
-    }
-
-    .primary-action-btn {
-        padding: 0.5rem 1rem;
-        font-size: 0.85rem;
-    }
-
-    .show-on-mobile {
-        display: block;
-    }
-
-    .hide-on-mobile {
-        display: none !important;
-    }
-
-    /* Modals Response Fixes */
-    .modal-content {
-        width: 100% !important;
-        max-width: 100% !important;
-        border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
-        /* Sheet style */
-        margin: 0 !important;
-        padding: 1.25rem !important;
-        position: absolute !important;
-        bottom: 0 !important;
-        max-height: 85vh !important;
-        overflow-y: auto;
-        animation: slideUp 0.3s ease-out;
-    }
-
-    @keyframes slideUp {
-        from {
-            transform: translateY(100%);
-        }
-
-        to {
-            transform: translateY(0);
-        }
-    }
+}
 }
 
 /* Global Mobile Fixes */
