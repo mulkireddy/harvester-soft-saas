@@ -118,92 +118,100 @@ const Dashboard: React.FC = () => {
             </header>
 
             {/* Premium Stats Grid */}
-            <div className="stats-grid" style={{ marginBottom: '3rem' }}>
-                {/* Revenue - Blue */}
+            <div className="stats-grid" style={{ marginBottom: '3rem', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                {/* Revenue - Pink Gradient (Airbnb Style) */}
                 <div
                     onClick={() => navigate('/reports')}
                     style={{
                         padding: '1.5rem', borderRadius: '16px',
-                        background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+                        background: 'linear-gradient(135deg, #FF385C 0%, #BD1E59 100%)',
                         color: 'white',
-                        boxShadow: '0 4px 6px -1px rgba(37, 99, 235, 0.2)',
+                        boxShadow: '0 8px 16px -4px rgba(255, 56, 92, 0.3)',
                         cursor: 'pointer',
-                        transition: 'transform 0.1s'
+                        transition: 'transform 0.1s',
+                        aspectRatio: '1/0.8',
+                        display: 'flex', flexDirection: 'column', justifyContent: 'center'
                     }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', opacity: 0.9 }}>
-                        <div style={{ padding: '0.5rem', background: 'rgba(255,255,255,0.2)', borderRadius: '10px' }}>
-                            <Wallet size={20} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', opacity: 0.9 }}>
+                        <div style={{ padding: '6px', background: 'rgba(255,255,255,0.2)', borderRadius: '8px' }}>
+                            <Wallet size={18} />
                         </div>
-                        <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>Total Revenue</span>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Revenue</span>
                     </div>
-                    <h3 style={{ fontSize: '2rem', fontWeight: 700, margin: 0 }}>
-                        {loading ? <Skeleton width={120} height={35} baseColor="rgba(255,255,255,0.2)" highlightColor="rgba(255,255,255,0.4)" /> : `₹ ${stats.totalRevenue.toLocaleString()}`}
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, lineHeight: 1 }}>
+                        {loading ? <Skeleton width={80} height={28} baseColor="rgba(255,255,255,0.2)" highlightColor="rgba(255,255,255,0.4)" /> : `₹${(stats.totalRevenue / 1000).toFixed(1)}k`}
                     </h3>
                 </div>
 
-                {/* Expenses - Red */}
+                {/* Expenses - Red Gradient */}
                 <div
                     onClick={() => navigate('/expenses')}
                     style={{
                         padding: '1.5rem', borderRadius: '16px',
                         background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
                         color: 'white',
-                        boxShadow: '0 4px 6px -1px rgba(220, 38, 38, 0.2)',
+                        boxShadow: '0 8px 16px -4px rgba(220, 38, 38, 0.3)',
                         cursor: 'pointer',
-                        transition: 'transform 0.1s'
+                        transition: 'transform 0.1s',
+                        aspectRatio: '1/0.8',
+                        display: 'flex', flexDirection: 'column', justifyContent: 'center'
                     }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', opacity: 0.9 }}>
-                        <div style={{ padding: '0.5rem', background: 'rgba(255,255,255,0.2)', borderRadius: '10px' }}>
-                            <TrendingDown size={20} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', opacity: 0.9 }}>
+                        <div style={{ padding: '6px', background: 'rgba(255,255,255,0.2)', borderRadius: '8px' }}>
+                            <TrendingDown size={18} />
                         </div>
-                        <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>Expenses</span>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Expenses</span>
                     </div>
-                    <h3 style={{ fontSize: '2rem', fontWeight: 700, margin: 0 }}>
-                        {loading ? <Skeleton width={120} height={35} baseColor="rgba(255,255,255,0.2)" highlightColor="rgba(255,255,255,0.4)" /> : `₹ ${stats.totalExpenses.toLocaleString()}`}
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, lineHeight: 1 }}>
+                        {loading ? <Skeleton width={80} height={28} baseColor="rgba(255,255,255,0.2)" highlightColor="rgba(255,255,255,0.4)" /> : `₹${(stats.totalExpenses / 1000).toFixed(1)}k`}
                     </h3>
                 </div>
 
-                {/* Profit - Green */}
+                {/* Profit - Green Gradient */}
                 <div
                     onClick={() => navigate('/reports')}
                     style={{
                         padding: '1.5rem', borderRadius: '16px',
                         background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
                         color: 'white',
-                        boxShadow: '0 4px 6px -1px rgba(5, 150, 105, 0.2)',
+                        boxShadow: '0 8px 16px -4px rgba(16, 185, 129, 0.3)',
                         cursor: 'pointer',
-                        transition: 'transform 0.1s'
+                        transition: 'transform 0.1s',
+                        aspectRatio: '1/0.8',
+                        display: 'flex', flexDirection: 'column', justifyContent: 'center'
                     }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', opacity: 0.9 }}>
-                        <div style={{ padding: '0.5rem', background: 'rgba(255,255,255,0.2)', borderRadius: '10px' }}>
-                            <TrendingUp size={20} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', opacity: 0.9 }}>
+                        <div style={{ padding: '6px', background: 'rgba(255,255,255,0.2)', borderRadius: '8px' }}>
+                            <TrendingUp size={18} />
                         </div>
-                        <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>Net Profit</span>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Net Profit</span>
                     </div>
-                    <h3 style={{ fontSize: '2rem', fontWeight: 700, margin: 0 }}>
-                        {loading ? <Skeleton width={120} height={35} baseColor="rgba(255,255,255,0.2)" highlightColor="rgba(255,255,255,0.4)" /> : `₹ ${stats.netProfit.toLocaleString()}`}
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, lineHeight: 1 }}>
+                        {loading ? <Skeleton width={80} height={28} baseColor="rgba(255,255,255,0.2)" highlightColor="rgba(255,255,255,0.4)" /> : `₹${(stats.netProfit / 1000).toFixed(1)}k`}
                     </h3>
                 </div>
 
-                {/* Pending - Orange */}
+                {/* Pending - Orange Gradient */}
                 <div
                     onClick={() => navigate('/farmers')}
                     style={{
                         padding: '1.5rem', borderRadius: '16px',
                         background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
                         color: 'white',
-                        boxShadow: '0 4px 6px -1px rgba(217, 119, 6, 0.2)',
+                        boxShadow: '0 8px 16px -4px rgba(245, 158, 11, 0.3)',
                         cursor: 'pointer',
-                        transition: 'transform 0.1s'
+                        transition: 'transform 0.1s',
+                        aspectRatio: '1/0.8',
+                        display: 'flex', flexDirection: 'column', justifyContent: 'center'
                     }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', opacity: 0.9 }}>
-                        <div style={{ padding: '0.5rem', background: 'rgba(255,255,255,0.2)', borderRadius: '10px' }}>
-                            <AlertCircle size={20} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', opacity: 0.9 }}>
+                        <div style={{ padding: '6px', background: 'rgba(255,255,255,0.2)', borderRadius: '8px' }}>
+                            <AlertCircle size={18} />
                         </div>
-                        <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>Pending Dues</span>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Pending</span>
                     </div>
-                    <h3 style={{ fontSize: '2rem', fontWeight: 700, margin: 0 }}>
-                        {loading ? <Skeleton width={120} height={35} baseColor="rgba(255,255,255,0.2)" highlightColor="rgba(255,255,255,0.4)" /> : `₹ ${stats.pendingDues.toLocaleString()}`}
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, lineHeight: 1 }}>
+                        {loading ? <Skeleton width={80} height={28} baseColor="rgba(255,255,255,0.2)" highlightColor="rgba(255,255,255,0.4)" /> : `₹${(stats.pendingDues / 1000).toFixed(1)}k`}
                     </h3>
                 </div>
             </div>

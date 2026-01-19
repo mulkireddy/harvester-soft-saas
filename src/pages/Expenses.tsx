@@ -137,7 +137,7 @@ const ExpensesPage: React.FC = () => {
     };
 
     return (
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+        <div style={{ width: '100%', maxWidth: '800px', margin: '0 auto' }}>
             <header style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                     <h1 style={{ fontSize: '1.5rem', marginBottom: '0.25rem', fontWeight: 700 }}>Expenses</h1>
@@ -170,7 +170,7 @@ const ExpensesPage: React.FC = () => {
 
             {/* Entry Form */}
             {showForm && (
-                <div className="card" style={{ marginBottom: '2rem', animation: 'fadeIn 0.2s ease-out' }}>
+                <div className="card" style={{ marginBottom: '2rem', animation: 'fadeIn 0.2s ease-out', width: '100%' }}>
                     <h2 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         New Expense
                         <button onClick={() => setShowForm(false)} style={{ color: 'var(--text-secondary)' }}><X size={20} /></button>
@@ -278,9 +278,9 @@ const ExpensesPage: React.FC = () => {
             </div>
 
             {loading ? (
-                <div style={{ display: 'grid', gap: '1rem' }}>
+                <div style={{ display: 'grid', gap: '1rem', width: '100%' }}>
                     {Array(3).fill(0).map((_, i) => (
-                        <div key={i} className="card" style={{ padding: '1rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <div key={i} className="card" style={{ padding: '1rem', display: 'flex', gap: '1rem', alignItems: 'center', width: '100%' }}>
                             <Skeleton width={40} height={40} borderRadius={10} />
                             <div style={{ flex: 1 }}>
                                 <Skeleton width="40%" height={16} style={{ marginBottom: '4px' }} />
@@ -295,13 +295,13 @@ const ExpensesPage: React.FC = () => {
                     <p>No expenses recorded yet.</p>
                 </div>
             ) : (
-                <div style={{ display: 'grid', gap: '0.75rem' }}>
+                <div style={{ display: 'grid', gap: '0.75rem', width: '100%' }}>
                     {recentExpenses.map(expense => {
                         const CategoryData = CATEGORIES.find(c => c.id === expense.category) || CATEGORIES[5];
                         const Icon = CategoryData.icon;
 
                         return (
-                            <div key={expense.id} className="card" style={{ padding: '1rem', display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+                            <div key={expense.id} className="card" style={{ padding: '1rem', display: 'flex', alignItems: 'flex-start', gap: '1rem', width: '100%' }}>
                                 <div style={{
                                     width: '40px', height: '40px',
                                     borderRadius: '10px',
