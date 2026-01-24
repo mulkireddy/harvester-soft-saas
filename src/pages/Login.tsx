@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Lock, ArrowRight, Loader2, Phone, Mail, ArrowLeft, MessageSquare } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { firebaseAuth } from '../lib/firebase';
-import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
+import { RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
