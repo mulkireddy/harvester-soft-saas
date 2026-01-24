@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Lock, ArrowRight, Loader2, Phone, Mail, ArrowLeft, MessageSquare } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { firebaseAuth } from '../lib/firebase';
+import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 type ViewMode = 'login' | 'signup' | 'forgot' | 'otp';
+declare global {
+    interface Window {
+        recaptchaVerifier: any;
+    }
+}
 
 const Login: React.FC = () => {
     const navigate = useNavigate();
@@ -14,6 +21,7 @@ const Login: React.FC = () => {
     // OTP State
     const [otpSent, setOtpSent] = useState(false);
     const [otp, setOtp] = useState('');
+    const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
 
     // Check if already logged in (e.g. from Email Link)
     useEffect(() => {
@@ -105,6 +113,17 @@ const Login: React.FC = () => {
         }
     };
 
+    const setupRecaptcha = () => {
+        if (!window.recaptchaVerifier) {
+            window.recaptchaVerifier = new RecaptchaVerifier(firebaseAuth, 'recaptcha-container', {
+                'size': 'invisible',
+                'callback': () => {
+                    // reCAPTCHA solved, allow signInWithPhoneNumber.
+                }
+            });
+        }
+    };
+
     const handleSendOtp = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
@@ -112,15 +131,22 @@ const Login: React.FC = () => {
         try {
             const formattedPhone = email.trim().startsWith('+') ? email.trim() : `+91${email.trim()}`;
 
-            const { error } = await supabase.auth.signInWithOtp({
-                phone: formattedPhone
-            });
-            if (error) throw error;
+            setupRecaptcha();
+            const appVerifier = window.recaptchaVerifier;
+
+            const confirmation = await signInWithPhoneNumber(firebaseAuth, formattedPhone, appVerifier);
+            setConfirmationResult(confirmation);
 
             setOtpSent(true);
-            toast.success('OTP Sent!');
+            toast.success('OTP Sent via Firebase!');
         } catch (err: any) {
+            console.error("Firebase Auth Error:", err);
             setError(err.message);
+            // Reset captcha if error
+            if (window.recaptchaVerifier) {
+                window.recaptchaVerifier.clear();
+                window.recaptchaVerifier = null;
+            }
         } finally {
             setLoading(false);
         }
@@ -131,20 +157,35 @@ const Login: React.FC = () => {
         setError('');
         setLoading(true);
         try {
-            const formattedPhone = email.trim().startsWith('+') ? email.trim() : `+91${email.trim()}`;
+            if (!confirmationResult) throw new Error("No OTP session found. Please request OTP again.");
 
-            const { error } = await supabase.auth.verifyOtp({
-                phone: formattedPhone,
-                token: otp,
-                type: 'sms'
+            // 1. Verify with Firebase
+            const result = await confirmationResult.confirm(otp);
+            const user = result.user;
+            const idToken = await user.getIdToken();
+
+            // 2. Exchange Token via Supabase Edge Function
+            // Note: Ensure this URL matches your deployed function
+            const { data, error } = await supabase.functions.invoke('auth-bridge', {
+                body: { idToken }
             });
 
             if (error) throw error;
+            if (!data.success) throw new Error(data.error || 'Bridge failed');
 
-            // Success handled by onAuthStateChange listener which will redirect
-            toast.success('Verified!');
+            // 3. Login to Supabase
+            const { error: sbError } = await supabase.auth.signInWithPassword({
+                email: data.email,
+                password: data.password
+            });
+
+            if (sbError) throw sbError;
+
+            // Success! Listener will redirect.
+            toast.success('Verified & Logged In!');
 
         } catch (err: any) {
+            console.error(err);
             setError(err.message);
         } finally {
             setLoading(false);
@@ -198,6 +239,9 @@ const Login: React.FC = () => {
                         <span>⚠️</span> {error}
                     </div>
                 )}
+
+                {/* Invisible ReCAPTCHA Container */}
+                <div id="recaptcha-container"></div>
 
                 {/* OTP Mode (Default) */}
                 {viewMode === 'otp' && (
