@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, ArrowRight, Loader2, Phone, Mail, ArrowLeft, MessageSquare } from 'lucide-react';
+import { ArrowRight, Loader2, Phone, MessageSquare } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { firebaseAuth } from '../lib/firebase';
 import { RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
-type ViewMode = 'login' | 'signup' | 'forgot' | 'otp';
 declare global {
     interface Window {
         recaptchaVerifier: any;
@@ -16,109 +15,33 @@ declare global {
 const Login: React.FC = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
-    const [viewMode, setViewMode] = useState<ViewMode>('otp');
 
     // OTP State
     const [otpSent, setOtpSent] = useState(false);
+    const [mobile, setMobile] = useState('');
     const [otp, setOtp] = useState('');
     const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+    const [error, setError] = useState('');
 
-    // Check if already logged in (e.g. from Email Link)
+    // Check if already logged in
     useEffect(() => {
-        // Check current session
         supabase.auth.getSession().then(({ data: { session } }) => {
             if (session) navigate('/');
         });
 
-        // Listen for changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            if (event === 'PASSWORD_RECOVERY') {
-                navigate('/');
-                toast('Please update your password in Settings', { icon: '🔑' });
-            } else if (session) {
-                navigate('/');
-            }
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (session) navigate('/');
         });
 
         return () => subscription.unsubscribe();
     }, [navigate]);
-
-    // Form State
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-
-    const handleAuth = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError('');
-        setLoading(true);
-
-        try {
-            // Handle Mobile Number Alias
-            let authEmail = email.trim();
-            // If strictly digits (10 chars or more), append domain
-            if (/^\d{10,}$/.test(authEmail)) {
-                authEmail = `${authEmail}@harvester.app`;
-            }
-
-            if (viewMode === 'signup') {
-                const { error } = await supabase.auth.signUp({
-                    email: authEmail,
-                    password,
-                });
-                if (error) throw error;
-                alert('Account created! Please check your email and click the confirmation link.');
-            } else {
-                const { error } = await supabase.auth.signInWithPassword({
-                    email: authEmail,
-                    password,
-                });
-                if (error) throw error;
-            }
-        } catch (err: any) {
-            console.error(err);
-            if (err.message === 'Invalid login credentials') {
-                setError('Invalid credentials. If this is your first time, please switch to "Create One" below.');
-            } else {
-                setError(err.message);
-            }
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleReset = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError('');
-        setLoading(true);
-        try {
-            let authEmail = email.trim();
-            if (/^\d{10,}$/.test(authEmail)) {
-                setError('Cannot reset password for Mobile Login (SMS not configured). Contact Admin.');
-                setLoading(false);
-                return;
-            }
-
-            const { error } = await supabase.auth.resetPasswordForEmail(authEmail, {
-                redirectTo: window.location.origin
-            });
-            if (error) throw error;
-
-            toast.success('Reset link sent! Check your email.');
-            setViewMode('login');
-        } catch (err: any) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const setupRecaptcha = () => {
         if (!window.recaptchaVerifier) {
             window.recaptchaVerifier = new RecaptchaVerifier(firebaseAuth, 'recaptcha-container', {
                 'size': 'invisible',
                 'callback': () => {
-                    // reCAPTCHA solved, allow signInWithPhoneNumber.
+                    // reCAPTCHA solved
                 }
             });
         }
@@ -129,7 +52,7 @@ const Login: React.FC = () => {
         setError('');
         setLoading(true);
         try {
-            const formattedPhone = email.trim().startsWith('+') ? email.trim() : `+91${email.trim()}`;
+            const formattedPhone = mobile.trim().startsWith('+') ? mobile.trim() : `+91${mobile.trim()}`;
 
             setupRecaptcha();
             const appVerifier = window.recaptchaVerifier;
@@ -138,11 +61,10 @@ const Login: React.FC = () => {
             setConfirmationResult(confirmation);
 
             setOtpSent(true);
-            toast.success('OTP Sent via Firebase!');
+            toast.success('OTP Sent!');
         } catch (err: any) {
             console.error("Firebase Auth Error:", err);
-            setError(err.message);
-            // Reset captcha if error
+            setError(err.message.replace('Firebase:', '').trim());
             if (window.recaptchaVerifier) {
                 window.recaptchaVerifier.clear();
                 window.recaptchaVerifier = null;
@@ -157,21 +79,20 @@ const Login: React.FC = () => {
         setError('');
         setLoading(true);
         try {
-            if (!confirmationResult) throw new Error("No OTP session found. Please request OTP again.");
+            if (!confirmationResult) throw new Error("Session expired. Please retry.");
 
             // 1. Verify with Firebase
             const result = await confirmationResult.confirm(otp);
             const user = result.user;
             const idToken = await user.getIdToken();
 
-            // 2. Exchange Token via Supabase Edge Function
-            // Note: Ensure this URL matches your deployed function
+            // 2. Exchange Token via Bridge
             const { data, error } = await supabase.functions.invoke('auth-bridge', {
                 body: { idToken }
             });
 
             if (error) throw error;
-            if (!data.success) throw new Error(data.error || 'Bridge failed');
+            if (!data.success) throw new Error(data.error || 'Login failed');
 
             // 3. Login to Supabase
             const { error: sbError } = await supabase.auth.signInWithPassword({
@@ -180,13 +101,11 @@ const Login: React.FC = () => {
             });
 
             if (sbError) throw sbError;
-
-            // Success! Listener will redirect.
-            toast.success('Verified & Logged In!');
+            toast.success('Welcome back!');
 
         } catch (err: any) {
             console.error(err);
-            setError(err.message);
+            setError('Invalid OTP or session expired.');
         } finally {
             setLoading(false);
         }
@@ -205,277 +124,130 @@ const Login: React.FC = () => {
                 width: '100%',
                 maxWidth: '400px',
                 padding: '2.5rem',
-                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)'
+                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                background: 'white',
+                borderRadius: '16px'
             }}>
-                <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-                    <img src="/logo.png" alt="HarvesterOS" style={{ height: '72px', width: 'auto', marginBottom: '1rem' }} />
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827', marginBottom: '0.25rem' }}>HarvesterOS</h1>
-                    <p style={{ color: 'var(--primary)', fontWeight: 600, fontSize: '0.9rem', marginBottom: '1.5rem' }}>Business Manager</p>
-
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>
-                        {viewMode === 'signup' ? 'Create Account' :
-                            viewMode === 'forgot' ? 'Reset Password' :
-                                viewMode === 'otp' ? 'Login with OTP' : 'Login with Password'}
-                    </h2>
-                    <p style={{ color: '#6B7280', fontSize: '0.95rem' }}>
-                        {viewMode === 'signup' ? 'Start managing your harvest business.' :
-                            viewMode === 'forgot' ? 'Enter email to receive reset link.' :
-                                viewMode === 'otp' ? 'Enter your mobile number to get started.' :
-                                    'Enter your credentials to access.'}
+                <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                    <img src="/logo.png" alt="HarvesterOS" style={{ height: '64px', width: 'auto', marginBottom: '1rem' }} />
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827' }}>HarvesterOS</h1>
+                    <p style={{ color: '#6B7280', fontSize: '0.9rem', marginTop: '0.5rem' }}>
+                        {otpSent ? 'Enter the code sent to your mobile' : 'Enter your mobile number to continue'}
                     </p>
                 </div>
 
                 {error && (
                     <div style={{
-                        padding: '1rem',
+                        padding: '0.75rem',
                         background: '#FEF2F2',
                         border: '1px solid #FECACA',
                         color: '#B91C1C',
-                        borderRadius: '12px',
+                        borderRadius: '8px',
                         marginBottom: '1.5rem',
                         fontSize: '0.875rem',
-                        display: 'flex', gap: '8px'
+                        textAlign: 'center'
                     }}>
-                        <span>⚠️</span> {error}
+                        {error}
                     </div>
                 )}
 
-                {/* Invisible ReCAPTCHA Container */}
                 <div id="recaptcha-container"></div>
 
-                {/* OTP Mode (Default) */}
-                {viewMode === 'otp' && (
-                    <form onSubmit={otpSent ? handleVerifyOtp : handleSendOtp}>
+                <form onSubmit={otpSent ? handleVerifyOtp : handleSendOtp}>
+                    {!otpSent ? (
                         <div className="input-group" style={{ marginBottom: '1.5rem' }}>
-                            <label className="label">Mobile Number</label>
+                            <label className="label" style={{ fontWeight: 600, color: '#374151', marginBottom: '0.5rem', display: 'block' }}>Mobile Number</label>
                             <div style={{ position: 'relative' }}>
                                 <Phone size={20} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
                                 <input
                                     type="tel"
                                     className="input"
                                     placeholder="9876543210"
-                                    style={{ paddingLeft: '2.5rem', width: '100%' }}
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    style={{
+                                        paddingLeft: '2.5rem',
+                                        width: '100%',
+                                        height: '48px',
+                                        fontSize: '1rem',
+                                        border: '1px solid #D1D5DB',
+                                        borderRadius: '8px'
+                                    }}
+                                    value={mobile}
+                                    onChange={(e) => setMobile(e.target.value)}
                                     required
-                                    disabled={otpSent}
                                     autoFocus
                                 />
                             </div>
                         </div>
-
-                        {otpSent && (
-                            <div className="input-group" style={{ marginBottom: '1.5rem', animation: 'fadeIn 0.3s' }}>
-                                <label className="label">Enter OTP</label>
-                                <div style={{ position: 'relative' }}>
-                                    <MessageSquare size={20} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
-                                    <input
-                                        type="text"
-                                        className="input"
-                                        placeholder="123456"
-                                        style={{ paddingLeft: '2.5rem', width: '100%', letterSpacing: '4px', fontWeight: 700 }}
-                                        value={otp}
-                                        onChange={(e) => setOtp(e.target.value)}
-                                        required
-                                        maxLength={6}
-                                    />
-                                </div>
-                            </div>
-                        )}
-
-                        <button
-                            type="submit"
-                            className="btn btn-primary"
-                            style={{ width: '100%', justifyContent: 'center', padding: '1rem', fontSize: '1rem' }}
-                            disabled={loading}
-                        >
-                            {loading ? <Loader2 className="animate-spin" /> : (
-                                <>{otpSent ? 'Verify & Login' : 'Send OTP'} <ArrowRight size={20} style={{ marginLeft: '8px' }} /></>
-                            )}
-                        </button>
-
-                        <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-                            <div className="relative mb-6">
-                                <div className="absolute inset-0 flex items-center">
-                                    <div className="w-full border-t border-gray-300"></div>
-                                </div>
-                                <div className="relative flex justify-center text-sm">
-                                    <span className="bg-[#F3F4F6] px-2 text-gray-500">Or continue with</span>
-                                </div>
-                            </div>
-
-                            <button
-                                type="button"
-                                onClick={() => { setViewMode('login'); setError(''); setOtpSent(false); setOtp(''); }}
-                                style={{
-                                    width: '100%',
-                                    padding: '0.75rem',
-                                    background: 'var(--bg-card)',
-                                    border: '1px solid var(--border-light)',
-                                    borderRadius: '8px',
-                                    color: 'var(--text-main)',
-                                    fontWeight: 600,
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '8px'
-                                }}
-                            >
-                                <Lock size={16} /> Login with Password
-                            </button>
-                        </div>
-                    </form>
-                )}
-
-                {/* Login / Signup Mode (Secondary) */}
-                {(viewMode === 'login' || viewMode === 'signup') && (
-                    <form onSubmit={handleAuth}>
-                        <div className="input-group" style={{ marginBottom: '1.25rem' }}>
-                            <label className="label">Mobile Number or Email</label>
+                    ) : (
+                        <div className="input-group" style={{ marginBottom: '1.5rem', animation: 'fadeIn 0.3s' }}>
+                            <label className="label" style={{ fontWeight: 600, color: '#374151', marginBottom: '0.5rem', display: 'block' }}>Verification Code</label>
                             <div style={{ position: 'relative' }}>
-                                <Phone size={20} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+                                <MessageSquare size={20} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
                                 <input
                                     type="text"
                                     className="input"
-                                    placeholder="98765 43210"
-                                    style={{ paddingLeft: '2.5rem', width: '100%' }}
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="123456"
+                                    style={{
+                                        paddingLeft: '2.5rem',
+                                        width: '100%',
+                                        height: '48px',
+                                        fontSize: '1.25rem',
+                                        letterSpacing: '4px',
+                                        fontWeight: 700,
+                                        border: '1px solid #D1D5DB',
+                                        borderRadius: '8px'
+                                    }}
+                                    value={otp}
+                                    onChange={(e) => setOtp(e.target.value)}
                                     required
-                                />
-                            </div>
-                        </div>
-
-                        <div className="input-group" style={{ marginBottom: '0.5rem' }}>
-                            <label className="label">Password</label>
-                            <div style={{ position: 'relative' }}>
-                                <Lock size={20} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
-                                <input
-                                    type="password"
-                                    className="input"
-                                    placeholder="••••••••"
-                                    style={{ paddingLeft: '2.5rem', width: '100%' }}
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    required
-                                    minLength={6}
-                                />
-                            </div>
-                        </div>
-
-                        {viewMode === 'login' && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
-                                <button
-                                    type="button"
-                                    onClick={() => { setViewMode('forgot'); setError(''); }}
-                                    style={{ background: 'none', border: 'none', color: '#6B7280', fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer' }}
-                                >
-                                    Forgot Password?
-                                </button>
-                            </div>
-                        )}
-
-                        <div style={{ marginBottom: viewMode === 'signup' ? '2rem' : '0' }}></div>
-
-                        <button
-                            type="submit"
-                            className="btn btn-primary"
-                            style={{ width: '100%', justifyContent: 'center', padding: '1rem', fontSize: '1rem' }}
-                            disabled={loading}
-                        >
-                            {loading ? <Loader2 className="animate-spin" /> : (
-                                <>{viewMode === 'signup' ? 'Sign Up' : 'Sign In'} <ArrowRight size={20} style={{ marginLeft: '8px' }} /></>
-                            )}
-                        </button>
-
-                        <div style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.9rem', color: '#6B7280' }}>
-                            <button
-                                type="button"
-                                onClick={() => { setViewMode('otp'); setError(''); }}
-                                style={{
-                                    background: 'none', border: 'none',
-                                    color: 'var(--primary)', fontWeight: 600,
-                                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', margin: '0 auto 1.5rem auto'
-                                }}
-                            >
-                                <ArrowLeft size={16} /> Back to OTP Login
-                            </button>
-
-
-                            {viewMode === 'login' ? (
-                                <p>
-                                    Don't have an account?{' '}
-                                    <button
-                                        type="button"
-                                        onClick={() => { setViewMode('signup'); setError(''); }}
-                                        style={{ color: 'var(--primary)', fontWeight: 600, cursor: 'pointer' }}
-                                    >
-                                        Create one
-                                    </button>
-                                </p>
-                            ) : (
-                                <p>
-                                    Already have an account?{' '}
-                                    <button
-                                        type="button"
-                                        onClick={() => { setViewMode('login'); setError(''); }}
-                                        style={{ color: 'var(--primary)', fontWeight: 600, cursor: 'pointer' }}
-                                    >
-                                        Log in
-                                    </button>
-                                </p>
-                            )}
-                        </div>
-                    </form>
-                )}
-
-                {/* Forgot Password Mode */}
-                {viewMode === 'forgot' && (
-                    <form onSubmit={handleReset}>
-                        <div className="input-group" style={{ marginBottom: '1.5rem' }}>
-                            <label className="label">Registered Email</label>
-                            <div style={{ position: 'relative' }}>
-                                <Mail size={20} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
-                                <input
-                                    type="email"
-                                    className="input"
-                                    placeholder="your@email.com"
-                                    style={{ paddingLeft: '2.5rem', width: '100%' }}
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    required
+                                    maxLength={6}
                                     autoFocus
                                 />
                             </div>
                         </div>
+                    )}
 
+                    <button
+                        type="submit"
+                        className="btn btn-primary"
+                        style={{
+                            width: '100%',
+                            justifyContent: 'center',
+                            padding: '0.875rem',
+                            fontSize: '1rem',
+                            fontWeight: 600,
+                            borderRadius: '8px',
+                            background: 'var(--primary)',
+                            color: 'white',
+                            border: 'none',
+                            cursor: loading ? 'not-allowed' : 'pointer',
+                            marginTop: '0.5rem'
+                        }}
+                        disabled={loading}
+                    >
+                        {loading ? <Loader2 className="animate-spin" /> : (
+                            <>{otpSent ? 'Verify & Login' : 'Get OTP'} <ArrowRight size={20} style={{ marginLeft: '8px' }} /></>
+                        )}
+                    </button>
+
+                    {otpSent && (
                         <button
-                            type="submit"
-                            className="btn btn-primary"
-                            style={{ width: '100%', justifyContent: 'center', padding: '1rem', fontSize: '1rem' }}
-                            disabled={loading}
+                            type="button"
+                            onClick={() => { setOtpSent(false); setOtp(''); setError(''); }}
+                            style={{
+                                width: '100%',
+                                marginTop: '1.5rem',
+                                background: 'none',
+                                border: 'none',
+                                color: '#6B7280',
+                                cursor: 'pointer',
+                                fontSize: '0.9rem'
+                            }}
                         >
-                            {loading ? <Loader2 className="animate-spin" /> : (
-                                <>Send Reset Link <ArrowRight size={20} style={{ marginLeft: '8px' }} /></>
-                            )}
+                            Change Number
                         </button>
-
-                        <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-                            <button
-                                type="button"
-                                onClick={() => { setViewMode('login'); setError(''); }}
-                                style={{
-                                    background: 'none', border: 'none',
-                                    color: '#6B7280', fontWeight: 600,
-                                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', margin: '0 auto'
-                                }}
-                            >
-                                <ArrowLeft size={16} /> Back to Login
-                            </button>
-                        </div>
-                    </form>
-                )}
+                    )}
+                </form>
             </div>
         </div>
     );
