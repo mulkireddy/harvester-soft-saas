@@ -24,9 +24,8 @@ const CollapsibleSection: React.FC<{
         <section style={{
             background: 'var(--bg-card)',
             borderRadius: 'var(--radius-xl)',
-            marginBottom: '1rem',
+            marginBottom: '1.25rem',
             boxShadow: 'var(--shadow-card)',
-            border: '1px solid var(--border-light)',
             overflow: 'hidden'
         }}>
             <button

@@ -226,7 +226,7 @@ const Dashboard: React.FC = () => {
     return (
         <div className="animate-fade-in">
             {/* Header with Greeting and Date */}
-            <header style={{ marginBottom: '1.5rem' }}>
+            <header style={{ marginBottom: '2rem' }}>
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -244,7 +244,7 @@ const Dashboard: React.FC = () => {
                     })}
                 </div>
                 <h1 style={{
-                    fontSize: 'var(--text-2xl)',
+                    fontSize: '1.75rem',
                     fontWeight: 700,
                     color: 'var(--text-main)',
                     letterSpacing: '-0.02em'
@@ -257,10 +257,9 @@ const Dashboard: React.FC = () => {
             <div style={{
                 background: 'var(--bg-card)',
                 borderRadius: 'var(--radius-xl)',
-                padding: '1rem 1.25rem',
-                marginBottom: '1.25rem',
-                border: '1px solid var(--border-light)',
-                boxShadow: 'var(--shadow-xs)'
+                padding: '1.25rem 1.5rem',
+                marginBottom: '2rem',
+                boxShadow: 'var(--shadow-card)'
             }}>
                 <div style={{
                     display: 'flex',
@@ -326,8 +325,8 @@ const Dashboard: React.FC = () => {
             <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: '0.875rem',
-                marginBottom: '1.25rem'
+                gap: '1rem',
+                marginBottom: '2rem'
             }}>
                 {/* Revenue Card */}
                 <div
@@ -338,16 +337,15 @@ const Dashboard: React.FC = () => {
                     aria-label="View revenue reports"
                     onKeyDown={(e) => e.key === 'Enter' && navigate('/reports')}
                     style={{
-                        padding: '1.25rem',
+                        padding: '1.5rem',
                         borderRadius: 'var(--radius-xl)',
                         background: 'var(--bg-card)',
-                        border: '1px solid var(--border-light)',
                         boxShadow: 'var(--shadow-card)',
                         cursor: 'pointer',
                         transition: 'all var(--transition-fast)',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '0.875rem'
+                        gap: '1rem'
                     }}
                 >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -374,7 +372,7 @@ const Dashboard: React.FC = () => {
                             Total Revenue
                         </div>
                         <div style={{
-                            fontSize: '1.5rem',
+                            fontSize: '2rem',
                             fontWeight: 700,
                             color: 'var(--text-main)',
                             letterSpacing: '-0.02em'
@@ -393,16 +391,15 @@ const Dashboard: React.FC = () => {
                     aria-label="View profit reports"
                     onKeyDown={(e) => e.key === 'Enter' && navigate('/reports')}
                     style={{
-                        padding: '1.25rem',
+                        padding: '1.5rem',
                         borderRadius: 'var(--radius-xl)',
                         background: 'var(--bg-card)',
-                        border: '1px solid var(--border-light)',
                         boxShadow: 'var(--shadow-card)',
                         cursor: 'pointer',
                         transition: 'all var(--transition-fast)',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '0.875rem',
+                        gap: '1rem',
                         animationDelay: '50ms'
                     }}
                 >
@@ -430,7 +427,7 @@ const Dashboard: React.FC = () => {
                             Net Profit
                         </div>
                         <div style={{
-                            fontSize: '1.5rem',
+                            fontSize: '2rem',
                             fontWeight: 700,
                             color: stats.netProfit >= 0 ? 'var(--success)' : 'var(--error)',
                             letterSpacing: '-0.02em'
@@ -445,34 +442,34 @@ const Dashboard: React.FC = () => {
             <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: '0.75rem',
-                marginBottom: '1.5rem'
+                gap: '1rem',
+                marginBottom: '2rem'
             }}>
                 {/* Expenses Mini Card */}
                 <div
                     onClick={() => { playClickHaptic(); navigate('/expenses'); }}
                     style={{
-                        padding: '0.875rem 1rem',
-                        borderRadius: 'var(--radius-lg)',
+                        padding: '1rem 1.25rem',
+                        borderRadius: 'var(--radius-xl)',
                         background: 'var(--bg-card)',
-                        border: '1px solid var(--border-light)',
+                        boxShadow: 'var(--shadow-card)',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.75rem',
+                        gap: '1rem',
                         transition: 'all var(--transition-fast)'
                     }}
                 >
                     <div style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: 'var(--radius-md)',
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: 'var(--radius-lg)',
                         background: 'rgba(239, 68, 68, 0.1)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center'
                     }}>
-                        <TrendingDown size={18} style={{ color: 'var(--error)' }} />
+                        <TrendingDown size={20} style={{ color: 'var(--error)' }} />
                     </div>
                     <div>
                         <div style={{
@@ -498,27 +495,27 @@ const Dashboard: React.FC = () => {
                 <div
                     onClick={() => { playClickHaptic(); navigate('/farmers'); }}
                     style={{
-                        padding: '0.875rem 1rem',
-                        borderRadius: 'var(--radius-lg)',
+                        padding: '1rem 1.25rem',
+                        borderRadius: 'var(--radius-xl)',
                         background: 'var(--bg-card)',
-                        border: '1px solid var(--border-light)',
+                        boxShadow: 'var(--shadow-card)',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.75rem',
+                        gap: '1rem',
                         transition: 'all var(--transition-fast)'
                     }}
                 >
                     <div style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: 'var(--radius-md)',
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: 'var(--radius-lg)',
                         background: 'rgba(245, 158, 11, 0.1)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center'
                     }}>
-                        <Clock size={18} style={{ color: 'var(--warning)' }} />
+                        <Clock size={20} style={{ color: 'var(--warning)' }} />
                     </div>
                     <div>
                         <div style={{

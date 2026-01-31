@@ -75,26 +75,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             }}>
                 {/* Left: Logo */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-                    <div style={{
-                        width: '36px',
-                        height: '36px',
-                        background: 'linear-gradient(135deg, var(--primary) 0%, #059669 100%)',
-                        borderRadius: 'var(--radius-lg)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: '0 2px 8px rgba(5, 150, 105, 0.25)'
-                    }}>
-                        <img
-                            src="/logo.png"
-                            alt="HarvesterOS"
-                            style={{ width: '22px', height: '22px', objectFit: 'contain' }}
-                            onError={(e) => {
-                                // Fallback if logo doesn't exist
-                                (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                        />
-                    </div>
+                    <img
+                        src="/logo.png"
+                        alt="HarvesterOS"
+                        style={{
+                            width: '44px',
+                            height: '44px',
+                            borderRadius: 'var(--radius-lg)',
+                            objectFit: 'cover'
+                        }}
+                        onError={(e) => {
+                            // Fallback if logo doesn't exist
+                            (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                    />
                     <h1 style={{
                         fontSize: '1.125rem',
                         fontWeight: 700,

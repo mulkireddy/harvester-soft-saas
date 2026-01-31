@@ -9,12 +9,12 @@ import ExpenseHistoryModal from '../components/modals/ExpenseHistoryModal';
 import toast from 'react-hot-toast';
 
 const CATEGORIES = [
-    { id: 'Fuel', label: 'Diesel / Fuel', shortLabel: 'Fuel', icon: Droplet, color: '#FEE2E2', textColor: '#DC2626' },
-    { id: 'Spares & Repairs', label: 'Spares & Repairs', shortLabel: 'Repairs', icon: Wrench, color: '#FEF3C7', textColor: '#D97706' },
-    { id: 'Driver Salary', label: 'Driver Salary', shortLabel: 'Salary', icon: User, color: '#DBEAFE', textColor: '#2563EB' },
-    { id: 'Food', label: 'Food & Allowance', shortLabel: 'Food', icon: Coffee, color: '#D1FAE5', textColor: '#059669' },
-    { id: 'EMI', label: 'Machine EMI', shortLabel: 'EMI', icon: Landmark, color: '#E0E7FF', textColor: '#4F46E5' },
-    { id: 'Other', label: 'Other Expenses', shortLabel: 'Other', icon: CreditCard, color: '#F3F4F6', textColor: '#6B7280' }
+    { id: 'Fuel', label: 'Diesel / Fuel', shortLabel: 'Fuel', icon: Droplet, color: '#FEF2F2', textColor: '#B91C1C' },
+    { id: 'Spares & Repairs', label: 'Spares & Repairs', shortLabel: 'Repairs', icon: Wrench, color: '#FFFBEB', textColor: '#B45309' },
+    { id: 'Driver Salary', label: 'Driver Salary', shortLabel: 'Salary', icon: User, color: '#EFF6FF', textColor: '#1D4ED8' },
+    { id: 'Food', label: 'Food & Allowance', shortLabel: 'Food', icon: Coffee, color: '#ECFDF5', textColor: '#047857' },
+    { id: 'EMI', label: 'Machine EMI', shortLabel: 'EMI', icon: Landmark, color: '#EEF2FF', textColor: '#4338CA' },
+    { id: 'Other', label: 'Other Expenses', shortLabel: 'Other', icon: CreditCard, color: '#F9FAFB', textColor: '#4B5563' }
 ];
 
 // Category Grid Selector Component
