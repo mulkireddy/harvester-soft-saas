@@ -1,18 +1,496 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-// import { supabase } from '../lib/supabase'; // Existing import
-import { Plus, Trash2, Truck } from 'lucide-react';
-import { playClickHaptic } from '../lib/ui-utils';
+import {
+    Plus, Trash2, Truck, IndianRupee, Palette, Check, Loader2,
+    ChevronDown, ChevronUp, User, Lock, Edit2, X, Phone, LogOut
+} from 'lucide-react';
+import ThemeToggle from '../components/common/ThemeToggle';
+import { playClickHaptic, playSuccessHaptic } from '../lib/ui-utils';
+import toast from 'react-hot-toast';
+
+// Collapsible Section Component
+const CollapsibleSection: React.FC<{
+    title: string;
+    subtitle: string;
+    icon: React.ReactNode;
+    iconBg: string;
+    iconColor: string;
+    defaultOpen?: boolean;
+    children: React.ReactNode;
+}> = ({ title, subtitle, icon, iconBg, iconColor, defaultOpen = true, children }) => {
+    const [isOpen, setIsOpen] = useState(defaultOpen);
+
+    return (
+        <section style={{
+            background: 'var(--bg-card)',
+            borderRadius: 'var(--radius-xl)',
+            marginBottom: '1rem',
+            boxShadow: 'var(--shadow-card)',
+            border: '1px solid var(--border-light)',
+            overflow: 'hidden'
+        }}>
+            <button
+                onClick={() => { playClickHaptic(); setIsOpen(!isOpen); }}
+                style={{
+                    width: '100%',
+                    padding: '1.25rem',
+                    borderBottom: isOpen ? '1px solid var(--border-light)' : 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.875rem',
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    textAlign: 'left'
+                }}
+            >
+                <div style={{
+                    padding: '0.625rem',
+                    background: iconBg,
+                    borderRadius: 'var(--radius-md)',
+                    color: iconColor
+                }}>
+                    {icon}
+                </div>
+                <div style={{ flex: 1 }}>
+                    <h2 style={{
+                        fontSize: 'var(--text-base)',
+                        fontWeight: 600,
+                        color: 'var(--text-main)'
+                    }}>
+                        {title}
+                    </h2>
+                    <p style={{
+                        fontSize: 'var(--text-xs)',
+                        color: 'var(--text-muted)',
+                        marginTop: '0.125rem'
+                    }}>
+                        {subtitle}
+                    </p>
+                </div>
+                <div style={{ color: 'var(--text-muted)' }}>
+                    {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                </div>
+            </button>
+
+            {isOpen && (
+                <div className="animate-fade-in" style={{ padding: '1.25rem' }}>
+                    {children}
+                </div>
+            )}
+        </section>
+    );
+};
+
+// Toggle Switch Component
+const ToggleSwitch: React.FC<{
+    checked: boolean;
+    onChange: (checked: boolean) => void;
+}> = ({ checked, onChange }) => (
+    <button
+        onClick={() => {
+            playClickHaptic();
+            onChange(!checked);
+        }}
+        style={{
+            width: '56px',
+            height: '30px',
+            borderRadius: 'var(--radius-full)',
+            background: checked
+                ? 'linear-gradient(135deg, var(--primary), #10B981)'
+                : 'var(--bg-subtle)',
+            border: checked ? 'none' : '2px solid var(--border-light)',
+            cursor: 'pointer',
+            position: 'relative',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            boxShadow: checked ? 'var(--shadow-sm)' : 'none'
+        }}
+    >
+        <span style={{
+            position: 'absolute',
+            top: checked ? '3px' : '2px',
+            left: checked ? '28px' : '2px',
+            width: checked ? '24px' : '22px',
+            height: checked ? '24px' : '22px',
+            background: 'white',
+            borderRadius: '50%',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+        }}>
+            {checked && (
+                <Check size={12} style={{ color: 'var(--primary)' }} />
+            )}
+        </span>
+    </button>
+);
+
+// Edit Machine Modal
+const EditMachineModal: React.FC<{
+    machine: any;
+    onClose: () => void;
+    onSave: (id: string, name: string, reg: string) => void;
+}> = ({ machine, onClose, onSave }) => {
+    const [name, setName] = useState(machine.name);
+    const [reg, setReg] = useState(machine.registration_number || '');
+
+    return (
+        <div style={{
+            position: 'fixed',
+            top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '1rem'
+        }}>
+            <div className="animate-scale-in" style={{
+                background: 'var(--bg-card)',
+                borderRadius: 'var(--radius-xl)',
+                padding: '1.5rem',
+                width: '100%',
+                maxWidth: '400px',
+                boxShadow: 'var(--shadow-lg)'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                    <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-main)' }}>
+                        Edit Machine
+                    </h3>
+                    <button onClick={onClose} style={{
+                        padding: '0.5rem',
+                        background: 'var(--bg-subtle)',
+                        border: 'none',
+                        borderRadius: 'var(--radius-md)',
+                        cursor: 'pointer',
+                        display: 'flex'
+                    }}>
+                        <X size={18} style={{ color: 'var(--text-muted)' }} />
+                    </button>
+                </div>
+
+                <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                    <div>
+                        <label style={{
+                            display: 'block',
+                            fontSize: 'var(--text-xs)',
+                            fontWeight: 500,
+                            color: 'var(--text-muted)',
+                            marginBottom: '0.375rem'
+                        }}>
+                            Machine Name
+                        </label>
+                        <input
+                            type="text"
+                            value={name}
+                            onChange={e => setName(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '0.75rem',
+                                fontSize: 'var(--text-sm)',
+                                border: '1px solid var(--border-light)',
+                                borderRadius: 'var(--radius-md)',
+                                background: 'var(--bg-subtle)',
+                                color: 'var(--text-main)'
+                            }}
+                        />
+                    </div>
+                    <div>
+                        <label style={{
+                            display: 'block',
+                            fontSize: 'var(--text-xs)',
+                            fontWeight: 500,
+                            color: 'var(--text-muted)',
+                            marginBottom: '0.375rem'
+                        }}>
+                            Registration Number
+                        </label>
+                        <input
+                            type="text"
+                            value={reg}
+                            onChange={e => setReg(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '0.75rem',
+                                fontSize: 'var(--text-sm)',
+                                border: '1px solid var(--border-light)',
+                                borderRadius: 'var(--radius-md)',
+                                background: 'var(--bg-subtle)',
+                                color: 'var(--text-main)'
+                            }}
+                        />
+                    </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <button
+                        onClick={onClose}
+                        style={{
+                            flex: 1,
+                            padding: '0.75rem',
+                            fontSize: 'var(--text-sm)',
+                            fontWeight: 600,
+                            background: 'var(--bg-subtle)',
+                            color: 'var(--text-muted)',
+                            border: '1px solid var(--border-light)',
+                            borderRadius: 'var(--radius-md)',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={() => { onSave(machine.id, name, reg); onClose(); }}
+                        disabled={!name.trim()}
+                        style={{
+                            flex: 1,
+                            padding: '0.75rem',
+                            fontSize: 'var(--text-sm)',
+                            fontWeight: 600,
+                            background: 'var(--primary)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: 'var(--radius-md)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.5rem'
+                        }}
+                    >
+                        <Check size={16} />
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// PIN Change Modal
+const PinChangeModal: React.FC<{
+    onClose: () => void;
+    onSave: (oldPin: string, newPin: string) => void;
+}> = ({ onClose, onSave }) => {
+    const [currentPin, setCurrentPin] = useState('');
+    const [newPin, setNewPin] = useState('');
+    const [confirmPin, setConfirmPin] = useState('');
+    const [error, setError] = useState('');
+
+    const handleSave = () => {
+        if (newPin !== confirmPin) {
+            setError('New PINs do not match');
+            return;
+        }
+        if (newPin.length < 4) {
+            setError('PIN must be at least 4 digits');
+            return;
+        }
+        onSave(currentPin, newPin);
+        onClose();
+    };
+
+    return (
+        <div style={{
+            position: 'fixed',
+            top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '1rem'
+        }}>
+            <div className="animate-scale-in" style={{
+                background: 'var(--bg-card)',
+                borderRadius: 'var(--radius-xl)',
+                padding: '1.5rem',
+                width: '100%',
+                maxWidth: '400px',
+                boxShadow: 'var(--shadow-lg)'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                    <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-main)' }}>
+                        Change PIN
+                    </h3>
+                    <button onClick={onClose} style={{
+                        padding: '0.5rem',
+                        background: 'var(--bg-subtle)',
+                        border: 'none',
+                        borderRadius: 'var(--radius-md)',
+                        cursor: 'pointer',
+                        display: 'flex'
+                    }}>
+                        <X size={18} style={{ color: 'var(--text-muted)' }} />
+                    </button>
+                </div>
+
+                <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                    <div>
+                        <label style={{
+                            display: 'block',
+                            fontSize: 'var(--text-xs)',
+                            fontWeight: 500,
+                            color: 'var(--text-muted)',
+                            marginBottom: '0.375rem'
+                        }}>
+                            Current PIN
+                        </label>
+                        <input
+                            type="password"
+                            inputMode="numeric"
+                            maxLength={6}
+                            value={currentPin}
+                            onChange={e => setCurrentPin(e.target.value.replace(/\D/g, ''))}
+                            style={{
+                                width: '100%',
+                                padding: '0.75rem',
+                                fontSize: 'var(--text-lg)',
+                                fontWeight: 700,
+                                letterSpacing: '0.5rem',
+                                textAlign: 'center',
+                                border: '1px solid var(--border-light)',
+                                borderRadius: 'var(--radius-md)',
+                                background: 'var(--bg-subtle)',
+                                color: 'var(--text-main)'
+                            }}
+                        />
+                    </div>
+                    <div>
+                        <label style={{
+                            display: 'block',
+                            fontSize: 'var(--text-xs)',
+                            fontWeight: 500,
+                            color: 'var(--text-muted)',
+                            marginBottom: '0.375rem'
+                        }}>
+                            New PIN
+                        </label>
+                        <input
+                            type="password"
+                            inputMode="numeric"
+                            maxLength={6}
+                            value={newPin}
+                            onChange={e => setNewPin(e.target.value.replace(/\D/g, ''))}
+                            style={{
+                                width: '100%',
+                                padding: '0.75rem',
+                                fontSize: 'var(--text-lg)',
+                                fontWeight: 700,
+                                letterSpacing: '0.5rem',
+                                textAlign: 'center',
+                                border: '1px solid var(--border-light)',
+                                borderRadius: 'var(--radius-md)',
+                                background: 'var(--bg-subtle)',
+                                color: 'var(--text-main)'
+                            }}
+                        />
+                    </div>
+                    <div>
+                        <label style={{
+                            display: 'block',
+                            fontSize: 'var(--text-xs)',
+                            fontWeight: 500,
+                            color: 'var(--text-muted)',
+                            marginBottom: '0.375rem'
+                        }}>
+                            Confirm New PIN
+                        </label>
+                        <input
+                            type="password"
+                            inputMode="numeric"
+                            maxLength={6}
+                            value={confirmPin}
+                            onChange={e => setConfirmPin(e.target.value.replace(/\D/g, ''))}
+                            style={{
+                                width: '100%',
+                                padding: '0.75rem',
+                                fontSize: 'var(--text-lg)',
+                                fontWeight: 700,
+                                letterSpacing: '0.5rem',
+                                textAlign: 'center',
+                                border: '1px solid var(--border-light)',
+                                borderRadius: 'var(--radius-md)',
+                                background: 'var(--bg-subtle)',
+                                color: 'var(--text-main)'
+                            }}
+                        />
+                    </div>
+                </div>
+
+                {error && (
+                    <div style={{
+                        padding: '0.75rem',
+                        background: 'var(--error-light)',
+                        color: 'var(--error)',
+                        borderRadius: 'var(--radius-md)',
+                        fontSize: 'var(--text-xs)',
+                        fontWeight: 500,
+                        marginBottom: '1rem'
+                    }}>
+                        {error}
+                    </div>
+                )}
+
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <button
+                        onClick={onClose}
+                        style={{
+                            flex: 1,
+                            padding: '0.75rem',
+                            fontSize: 'var(--text-sm)',
+                            fontWeight: 600,
+                            background: 'var(--bg-subtle)',
+                            color: 'var(--text-muted)',
+                            border: '1px solid var(--border-light)',
+                            borderRadius: 'var(--radius-md)',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={handleSave}
+                        disabled={!currentPin || !newPin || !confirmPin}
+                        style={{
+                            flex: 1,
+                            padding: '0.75rem',
+                            fontSize: 'var(--text-sm)',
+                            fontWeight: 600,
+                            background: 'var(--primary)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: 'var(--radius-md)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.5rem'
+                        }}
+                    >
+                        <Lock size={16} />
+                        Update PIN
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const SettingsPage: React.FC = () => {
     const [machines, setMachines] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
+    const [editingMachine, setEditingMachine] = useState<any>(null);
+    const [showPinModal, setShowPinModal] = useState(false);
+
+    // User Profile State
+    const [userProfile, setUserProfile] = useState<any>(null);
 
     // New Machine State
     const [newMachineName, setNewMachineName] = useState('');
     const [newMachineReg, setNewMachineReg] = useState('');
-
 
     // Default Rates State
     const [defaultAcreRate, setDefaultAcreRate] = useState('');
@@ -21,7 +499,7 @@ const SettingsPage: React.FC = () => {
     // Appearance State
     const [highContrast, setHighContrast] = useState(false);
 
-    // Initialize state from local storage
+    // Initialize state
     useEffect(() => {
         const acre = localStorage.getItem('default_acre_rate');
         const hour = localStorage.getItem('default_hour_rate');
@@ -30,6 +508,9 @@ const SettingsPage: React.FC = () => {
 
         const savedContrast = localStorage.getItem('high_contrast') === 'true';
         setHighContrast(savedContrast);
+
+        fetchUserProfile();
+        fetchMachines();
     }, []);
 
     // Sync High Contrast
@@ -43,16 +524,17 @@ const SettingsPage: React.FC = () => {
         }
     }, [highContrast]);
 
-
-    const handleSaveRates = () => {
-        localStorage.setItem('default_acre_rate', defaultAcreRate);
-        localStorage.setItem('default_hour_rate', defaultHourRate);
-        alert('Default rates saved successfully!');
+    const fetchUserProfile = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const { data } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+            setUserProfile(data);
+        }
     };
-
-    useEffect(() => {
-        fetchMachines();
-    }, []);
 
     const fetchMachines = async () => {
         const { data, error } = await supabase
@@ -64,9 +546,18 @@ const SettingsPage: React.FC = () => {
         if (error) console.error('Error fetching machines:', error);
     };
 
+    const handleSaveRates = () => {
+        playClickHaptic();
+        localStorage.setItem('default_acre_rate', defaultAcreRate);
+        localStorage.setItem('default_hour_rate', defaultHourRate);
+        playSuccessHaptic();
+        toast.success('Default rates saved!');
+    };
+
     const handleAddMachine = async () => {
         if (!newMachineName.trim()) return;
         setLoading(true);
+        playClickHaptic();
         try {
             const { error } = await supabase
                 .from('machines')
@@ -76,17 +567,38 @@ const SettingsPage: React.FC = () => {
 
             setNewMachineName('');
             setNewMachineReg('');
-            fetchMachines(); // Refresh list
+            fetchMachines();
+            playSuccessHaptic();
+            toast.success('Machine added!');
         } catch (error) {
             console.error('Error adding machine:', error);
-            alert('Failed to add machine');
+            toast.error('Failed to add machine');
         } finally {
             setLoading(false);
         }
     };
 
+    const handleEditMachine = async (id: string, name: string, reg: string) => {
+        playClickHaptic();
+        try {
+            const { error } = await supabase
+                .from('machines')
+                .update({ name, registration_number: reg })
+                .eq('id', id);
+
+            if (error) throw error;
+            fetchMachines();
+            playSuccessHaptic();
+            toast.success('Machine updated!');
+        } catch (error) {
+            console.error('Error updating machine:', error);
+            toast.error('Failed to update machine');
+        }
+    };
+
     const handleDeleteMachine = async (id: string) => {
-        if (!confirm('Are you sure? This will NOT delete jobs associated with this machine, but might affect filtering.')) return;
+        if (!confirm('Are you sure? This will NOT delete jobs associated with this machine.')) return;
+        playClickHaptic();
 
         try {
             const { error } = await supabase
@@ -96,170 +608,556 @@ const SettingsPage: React.FC = () => {
 
             if (error) throw error;
             fetchMachines();
+            playSuccessHaptic();
+            toast.success('Machine removed');
         } catch (error) {
             console.error('Error deleting machine:', error);
-            alert('Cannot delete machine. It likely has jobs linked to it.');
+            toast.error('Cannot delete machine. It likely has jobs linked to it.');
         }
     };
 
+    const handleUpdatePin = async (oldPin: string, newPin: string) => {
+        playClickHaptic();
+        try {
+            // Verify old PIN
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { data: userData } = await supabase
+                .from('users')
+                .select('pin')
+                .eq('id', user.id)
+                .single();
+
+            if (userData?.pin !== oldPin) {
+                toast.error('Current PIN is incorrect');
+                return;
+            }
+
+            // Update PIN
+            const { error } = await supabase
+                .from('users')
+                .update({ pin: newPin })
+                .eq('id', user.id);
+
+            if (error) throw error;
+            playSuccessHaptic();
+            toast.success('PIN updated successfully!');
+        } catch (error) {
+            console.error('Error updating PIN:', error);
+            toast.error('Failed to update PIN');
+        }
+    };
+
+    const handleLogout = async () => {
+        if (!confirm('Are you sure you want to log out?')) return;
+        playClickHaptic();
+        await supabase.auth.signOut();
+        window.location.reload();
+    };
+
     return (
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-            <header style={{ marginBottom: '2rem' }}>
-                <h1 style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>Settings</h1>
-                <p style={{ color: 'var(--text-secondary)' }}>Manage your business preferences and assets.</p>
+        <div className="animate-fade-in" style={{ maxWidth: '800px', margin: '0 auto' }}>
+            {/* Header */}
+            <header style={{ marginBottom: '1.5rem' }}>
+                <h1 style={{
+                    fontSize: 'var(--text-xl)',
+                    fontWeight: 700,
+                    color: 'var(--text-main)',
+                    marginBottom: '0.375rem',
+                    letterSpacing: '-0.02em'
+                }}>
+                    Settings
+                </h1>
+                <p style={{
+                    fontSize: 'var(--text-sm)',
+                    color: 'var(--text-muted)'
+                }}>
+                    Manage your account & preferences
+                </p>
             </header>
 
-            {/* Machine Management Section */}
-            <section className="card" style={{ marginBottom: '2rem' }}>
-                <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ padding: '0.75rem', background: '#EFF6FF', borderRadius: '12px', color: 'var(--primary)' }}>
-                        <Truck size={24} />
+            {/* User Profile Section */}
+            <CollapsibleSection
+                title="Profile"
+                subtitle="Your account information"
+                icon={<User size={22} />}
+                iconBg="var(--info-light)"
+                iconColor="var(--info)"
+                defaultOpen={true}
+            >
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    padding: '1rem',
+                    background: 'var(--bg-subtle)',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1px solid var(--border-light)',
+                    marginBottom: '1rem'
+                }}>
+                    <div style={{
+                        width: '56px',
+                        height: '56px',
+                        borderRadius: 'var(--radius-full)',
+                        background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        fontWeight: 700,
+                        fontSize: 'var(--text-lg)'
+                    }}>
+                        {userProfile?.name?.charAt(0)?.toUpperCase() || 'U'}
                     </div>
-                    <div>
-                        <h2 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Harvester Machines</h2>
-                        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Add or remove machines available for work.</p>
+                    <div style={{ flex: 1 }}>
+                        <div style={{
+                            fontSize: 'var(--text-base)',
+                            fontWeight: 600,
+                            color: 'var(--text-main)'
+                        }}>
+                            {userProfile?.name || 'Loading...'}
+                        </div>
+                        <div style={{
+                            fontSize: 'var(--text-sm)',
+                            color: 'var(--text-muted)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.375rem',
+                            marginTop: '0.25rem'
+                        }}>
+                            <Phone size={14} />
+                            {userProfile?.phone || '---'}
+                        </div>
                     </div>
                 </div>
 
-                <div style={{ padding: '1.5rem' }}>
-                    {/* List */}
-                    <div style={{ display: 'grid', gap: '1rem', marginBottom: '1.5rem' }}>
+                {/* PIN Change & Logout */}
+                <div style={{ display: 'grid', gap: '0.75rem' }}>
+                    <button
+                        onClick={() => { playClickHaptic(); setShowPinModal(true); }}
+                        style={{
+                            width: '100%',
+                            padding: '0.875rem 1rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.75rem',
+                            background: 'var(--bg-subtle)',
+                            border: '1px solid var(--border-light)',
+                            borderRadius: 'var(--radius-lg)',
+                            cursor: 'pointer',
+                            textAlign: 'left'
+                        }}
+                    >
+                        <div style={{
+                            padding: '0.5rem',
+                            background: 'var(--warning-light)',
+                            borderRadius: 'var(--radius-md)',
+                            color: 'var(--warning)'
+                        }}>
+                            <Lock size={18} />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <div style={{
+                                fontSize: 'var(--text-sm)',
+                                fontWeight: 600,
+                                color: 'var(--text-main)'
+                            }}>
+                                Change PIN
+                            </div>
+                            <div style={{
+                                fontSize: 'var(--text-xs)',
+                                color: 'var(--text-muted)'
+                            }}>
+                                Update your login PIN
+                            </div>
+                        </div>
+                        <ChevronDown size={18} style={{ color: 'var(--text-muted)', transform: 'rotate(-90deg)' }} />
+                    </button>
+
+                    <button
+                        onClick={handleLogout}
+                        style={{
+                            width: '100%',
+                            padding: '0.875rem 1rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.75rem',
+                            background: 'var(--error-light)',
+                            border: '1px solid rgba(239, 68, 68, 0.15)',
+                            borderRadius: 'var(--radius-lg)',
+                            cursor: 'pointer',
+                            textAlign: 'left'
+                        }}
+                    >
+                        <div style={{
+                            padding: '0.5rem',
+                            background: 'white',
+                            borderRadius: 'var(--radius-md)',
+                            color: 'var(--error)'
+                        }}>
+                            <LogOut size={18} />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <div style={{
+                                fontSize: 'var(--text-sm)',
+                                fontWeight: 600,
+                                color: 'var(--error)'
+                            }}>
+                                Log Out
+                            </div>
+                            <div style={{
+                                fontSize: 'var(--text-xs)',
+                                color: 'var(--error)',
+                                opacity: 0.8
+                            }}>
+                                Sign out of your account
+                            </div>
+                        </div>
+                    </button>
+                </div>
+            </CollapsibleSection>
+
+            {/* Appearance Section */}
+            <CollapsibleSection
+                title="Appearance"
+                subtitle="Customize app look & feel"
+                icon={<Palette size={22} />}
+                iconBg="var(--primary-light)"
+                iconColor="var(--primary)"
+                defaultOpen={true}
+            >
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '1rem',
+                    background: 'var(--bg-subtle)',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1px solid var(--border-light)'
+                }}>
+                    <div>
+                        <div style={{
+                            fontSize: 'var(--text-sm)',
+                            fontWeight: 600,
+                            color: 'var(--text-main)',
+                            marginBottom: '0.25rem'
+                        }}>
+                            Theme
+                        </div>
+                        <div style={{
+                            fontSize: 'var(--text-xs)',
+                            color: 'var(--text-muted)'
+                        }}>
+                            Light, Dark or System
+                        </div>
+                    </div>
+                    <ThemeToggle />
+                </div>
+            </CollapsibleSection>
+
+            {/* Machine Management Section */}
+            <CollapsibleSection
+                title="Harvester Machines"
+                subtitle="Manage your machines"
+                icon={<Truck size={22} />}
+                iconBg="var(--secondary-light)"
+                iconColor="var(--secondary)"
+                defaultOpen={false}
+            >
+                {/* Machines List */}
+                {machines.length > 0 && (
+                    <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '1.25rem' }}>
                         {machines.map((m) => (
                             <div key={m.id} style={{
-                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                padding: '1rem', background: 'var(--bg-main)', borderRadius: '8px', border: '1px solid var(--border-light)'
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '0.875rem 1rem',
+                                background: 'var(--bg-subtle)',
+                                borderRadius: 'var(--radius-lg)',
+                                border: '1px solid var(--border-light)'
                             }}>
                                 <div>
-                                    <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>{m.name}</div>
+                                    <div style={{
+                                        fontWeight: 600,
+                                        color: 'var(--text-main)',
+                                        fontSize: 'var(--text-sm)'
+                                    }}>
+                                        {m.name}
+                                    </div>
                                     {m.registration_number && (
-                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                                        <div style={{
+                                            fontSize: 'var(--text-xs)',
+                                            color: 'var(--text-muted)',
+                                            marginTop: '0.125rem'
+                                        }}>
                                             {m.registration_number}
                                         </div>
                                     )}
                                 </div>
-                                <button
-                                    onClick={() => handleDeleteMachine(m.id)}
-                                    style={{ padding: '0.5rem', color: '#EF4444', borderRadius: '8px', transition: 'background 0.2s' }}
-                                    className="btn-icon"
-                                >
-                                    <Trash2 size={18} />
-                                </button>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <button
+                                        onClick={() => { playClickHaptic(); setEditingMachine(m); }}
+                                        style={{
+                                            padding: '0.5rem',
+                                            background: 'var(--info-light)',
+                                            color: 'var(--info)',
+                                            borderRadius: 'var(--radius-md)',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            display: 'flex'
+                                        }}
+                                    >
+                                        <Edit2 size={16} />
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeleteMachine(m.id)}
+                                        style={{
+                                            padding: '0.5rem',
+                                            background: 'var(--error-light)',
+                                            color: 'var(--error)',
+                                            borderRadius: 'var(--radius-md)',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            display: 'flex'
+                                        }}
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
                             </div>
                         ))}
                     </div>
+                )}
 
-                    {/* Add New */}
-                    {/* Add New */}
-                    <div style={{ display: 'grid', gap: '1rem' }}>
-                        <div className="input-group" style={{ marginBottom: 0 }}>
-                            <label className="label">Machine Name</label>
-                            <input
-                                className="input"
-                                placeholder="e.g. Kubota Red"
-                                value={newMachineName}
-                                onChange={e => setNewMachineName(e.target.value)}
-                            />
-                        </div>
-                        <div className="input-group" style={{ marginBottom: 0 }}>
-                            <label className="label">Reg. Number (Optional)</label>
-                            <input
-                                className="input"
-                                placeholder="MH-12-..."
-                                value={newMachineReg}
-                                onChange={e => setNewMachineReg(e.target.value)}
-                            />
-                        </div>
-                        <button
-                            className="btn btn-primary"
-                            onClick={handleAddMachine}
-                            disabled={loading || !newMachineName}
-                            style={{ height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%' }}
-                        >
-                            <Plus size={18} /> Add Machine
-                        </button>
+                {/* Add New Machine */}
+                <div style={{ display: 'grid', gap: '0.75rem' }}>
+                    <div>
+                        <label style={{
+                            display: 'block',
+                            fontSize: 'var(--text-xs)',
+                            fontWeight: 500,
+                            color: 'var(--text-muted)',
+                            marginBottom: '0.375rem'
+                        }}>
+                            Machine Name
+                        </label>
+                        <input
+                            type="text"
+                            placeholder="e.g. Kubota Red"
+                            value={newMachineName}
+                            onChange={e => setNewMachineName(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '0.625rem 0.875rem',
+                                fontSize: 'var(--text-sm)',
+                                border: '1px solid var(--border-light)',
+                                borderRadius: 'var(--radius-md)',
+                                background: 'var(--bg-card)',
+                                color: 'var(--text-main)'
+                            }}
+                        />
                     </div>
-                </div>
-            </section>
-
-            {/* Default Rates */}
-            <section className="card">
-                <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-light)' }}>
-                    <h2 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Default Rates</h2>
-                    <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Set default prices to auto-fill when adding new records.</p>
-                </div>
-                <div style={{ padding: '1.5rem' }}>
-                    <div className="grid-responsive grid-2" style={{ gap: '1.5rem', marginBottom: '1.5rem' }}>
-                        <div className="input-group" style={{ marginBottom: 0 }}>
-                            <label className="label">Rate per Acre (₹)</label>
-                            <input
-                                type="number"
-                                className="input"
-                                placeholder="e.g. 2000"
-                                value={defaultAcreRate}
-                                onChange={(e) => setDefaultAcreRate(e.target.value)}
-                            />
-                        </div>
-                        <div className="input-group" style={{ marginBottom: 0 }}>
-                            <label className="label">Rate per Hour (₹)</label>
-                            <input
-                                type="number"
-                                className="input"
-                                placeholder="e.g. 2500"
-                                value={defaultHourRate}
-                                onChange={(e) => setDefaultHourRate(e.target.value)}
-                            />
-                        </div>
+                    <div>
+                        <label style={{
+                            display: 'block',
+                            fontSize: 'var(--text-xs)',
+                            fontWeight: 500,
+                            color: 'var(--text-muted)',
+                            marginBottom: '0.375rem'
+                        }}>
+                            Reg. Number (Optional)
+                        </label>
+                        <input
+                            type="text"
+                            placeholder="MH-12-..."
+                            value={newMachineReg}
+                            onChange={e => setNewMachineReg(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '0.625rem 0.875rem',
+                                fontSize: 'var(--text-sm)',
+                                border: '1px solid var(--border-light)',
+                                borderRadius: 'var(--radius-md)',
+                                background: 'var(--bg-card)',
+                                color: 'var(--text-main)'
+                            }}
+                        />
                     </div>
                     <button
-                        className="btn btn-primary"
-                        onClick={handleSaveRates}
-                        style={{ padding: '0.75rem 2rem' }}
+                        onClick={handleAddMachine}
+                        disabled={loading || !newMachineName}
+                        style={{
+                            padding: '0.75rem 1rem',
+                            fontSize: 'var(--text-sm)',
+                            fontWeight: 600,
+                            background: !newMachineName ? 'var(--bg-subtle)' : 'var(--primary)',
+                            color: !newMachineName ? 'var(--text-muted)' : 'white',
+                            border: 'none',
+                            borderRadius: 'var(--radius-md)',
+                            cursor: !newMachineName ? 'not-allowed' : 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.5rem',
+                            transition: 'all var(--transition-fast)'
+                        }}
                     >
-                        Save Settings
+                        {loading ? <Loader2 className="animate-spin" size={18} /> : <Plus size={18} />}
+                        Add Machine
                     </button>
                 </div>
-            </section>
+            </CollapsibleSection>
 
-            {/* Appearance Settings */}
-            <section className="card" style={{ marginBottom: '2rem' }}>
-                <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-light)' }}>
-                    <h2 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Appearance</h2>
-                    <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Customize how the app looks.</p>
-                </div>
-                <div style={{ padding: '1.5rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div>
-                            <div style={{ fontWeight: 600 }}>High Contrast Mode</div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Better visibility in bright sunlight</div>
-                        </div>
-                        <label className="switch" style={{ position: 'relative', display: 'inline-block', width: '48px', height: '24px' }}>
-                            <input
-                                type="checkbox"
-                                checked={highContrast}
-                                onChange={(e) => {
-                                    playClickHaptic();
-                                    setHighContrast(e.target.checked);
-                                }}
-                                style={{ opacity: 0, width: 0, height: 0 }}
-                            />
-                            <span style={{
-                                position: 'absolute', cursor: 'pointer',
-                                top: 0, left: 0, right: 0, bottom: 0,
-                                backgroundColor: highContrast ? 'var(--primary)' : '#ccc',
-                                borderRadius: '24px',
-                                transition: '.4s'
-                            }}>
-                                <span style={{
-                                    position: 'absolute', content: '""', height: '16px', width: '16px',
-                                    left: highContrast ? '26px' : '4px', bottom: '4px',
-                                    backgroundColor: 'white', borderRadius: '50%',
-                                    transition: '.4s'
-                                }}></span>
-                            </span>
+            {/* Default Rates Section */}
+            <CollapsibleSection
+                title="Default Rates"
+                subtitle="Set default prices for new records"
+                icon={<IndianRupee size={22} />}
+                iconBg="var(--primary-light)"
+                iconColor="var(--primary)"
+                defaultOpen={false}
+            >
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    gap: '0.75rem',
+                    marginBottom: '1rem'
+                }}>
+                    <div>
+                        <label style={{
+                            display: 'block',
+                            fontSize: 'var(--text-xs)',
+                            fontWeight: 500,
+                            color: 'var(--text-muted)',
+                            marginBottom: '0.375rem'
+                        }}>
+                            Rate per Acre (₹)
                         </label>
+                        <input
+                            type="number"
+                            placeholder="e.g. 2000"
+                            value={defaultAcreRate}
+                            onChange={(e) => setDefaultAcreRate(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '0.625rem 0.875rem',
+                                fontSize: 'var(--text-sm)',
+                                fontWeight: 600,
+                                border: '1px solid var(--border-light)',
+                                borderRadius: 'var(--radius-md)',
+                                background: 'var(--bg-card)',
+                                color: 'var(--text-main)'
+                            }}
+                        />
+                    </div>
+                    <div>
+                        <label style={{
+                            display: 'block',
+                            fontSize: 'var(--text-xs)',
+                            fontWeight: 500,
+                            color: 'var(--text-muted)',
+                            marginBottom: '0.375rem'
+                        }}>
+                            Rate per Hour (₹)
+                        </label>
+                        <input
+                            type="number"
+                            placeholder="e.g. 2500"
+                            value={defaultHourRate}
+                            onChange={(e) => setDefaultHourRate(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '0.625rem 0.875rem',
+                                fontSize: 'var(--text-sm)',
+                                fontWeight: 600,
+                                border: '1px solid var(--border-light)',
+                                borderRadius: 'var(--radius-md)',
+                                background: 'var(--bg-card)',
+                                color: 'var(--text-main)'
+                            }}
+                        />
                     </div>
                 </div>
-            </section>
+                <button
+                    onClick={handleSaveRates}
+                    style={{
+                        padding: '0.75rem 1.5rem',
+                        fontSize: 'var(--text-sm)',
+                        fontWeight: 600,
+                        background: 'var(--primary)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: 'var(--radius-md)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        transition: 'all var(--transition-fast)'
+                    }}
+                >
+                    <Check size={16} />
+                    Save Rates
+                </button>
+            </CollapsibleSection>
+
+            {/* Appearance Settings */}
+            <CollapsibleSection
+                title="Appearance"
+                subtitle="Customize how the app looks"
+                icon={<Palette size={22} />}
+                iconBg="var(--warning-light)"
+                iconColor="var(--warning)"
+                defaultOpen={false}
+            >
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0.875rem 1rem',
+                    background: 'var(--bg-subtle)',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1px solid var(--border-light)'
+                }}>
+                    <div>
+                        <div style={{
+                            fontWeight: 600,
+                            color: 'var(--text-main)',
+                            fontSize: 'var(--text-sm)'
+                        }}>
+                            High Contrast Mode
+                        </div>
+                        <div style={{
+                            fontSize: 'var(--text-xs)',
+                            color: 'var(--text-muted)',
+                            marginTop: '0.125rem'
+                        }}>
+                            Better visibility in bright sunlight
+                        </div>
+                    </div>
+                    <ToggleSwitch
+                        checked={highContrast}
+                        onChange={setHighContrast}
+                    />
+                </div>
+            </CollapsibleSection>
+
+            {/* Modals */}
+            {editingMachine && (
+                <EditMachineModal
+                    machine={editingMachine}
+                    onClose={() => setEditingMachine(null)}
+                    onSave={handleEditMachine}
+                />
+            )}
+
+            {showPinModal && (
+                <PinChangeModal
+                    onClose={() => setShowPinModal(false)}
+                    onSave={handleUpdatePin}
+                />
+            )}
         </div>
     );
 };

@@ -25,22 +25,24 @@ const SyncStatus: React.FC = () => {
     return (
         <div style={{
             position: 'fixed',
-            bottom: '4.5rem', // Just above mobile nav or bottom
+            bottom: '5rem', // Just above mobile nav
             left: '50%',
             transform: 'translateX(-50%)',
-            background: '#1F2937',
-            color: 'white',
+            background: 'var(--text-main)',
+            color: 'var(--bg-card)',
             padding: '0.5rem 1rem',
-            borderRadius: '20px',
-            fontSize: '0.8rem',
+            borderRadius: 'var(--radius-full)',
+            fontSize: 'var(--text-xs)',
             fontWeight: 600,
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem',
-            boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-            zIndex: 999
+            boxShadow: 'var(--shadow-lg)',
+            zIndex: 9999,
+            opacity: 0.95,
+            border: '1px solid var(--border-light)'
         }}>
-            <WifiOff size={14} color="#F87171" />
+            <WifiOff size={14} className="text-error" style={{ color: 'var(--error)' }} />
             <span>Offline Mode</span>
         </div>
     );

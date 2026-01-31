@@ -1,6 +1,5 @@
-
-import React, { useState, useEffect } from 'react';
-import { Users, Loader2, X, Check, Download, Plus } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Users, Loader2, X, Check, Download, Plus, ChevronRight, Wheat, AlertCircle, Sparkles } from 'lucide-react';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { supabase } from '../lib/supabase';
@@ -12,8 +11,310 @@ import toast from 'react-hot-toast';
 import JobHistoryModal from '../components/modals/JobHistoryModal';
 import JobCard from '../components/features/JobCard';
 import ReceiptModal from '../components/modals/ReceiptModal';
+import FloatingInput from '../components/common/FloatingInput';
 
 type BillingMode = 'acre' | 'hour';
+
+// Autocomplete Component for Farmer Name
+const FarmerAutocomplete: React.FC<{
+    value: string;
+    onChange: (value: string) => void;
+    onSelect: (farmer: any) => void;
+    existingFarmerId: string | null;
+}> = ({ value, onChange, onSelect, existingFarmerId }) => {
+    const [suggestions, setSuggestions] = useState<any[]>([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
+    const wrapperRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+                setShowSuggestions(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const searchFarmers = async (query: string) => {
+        if (query.length < 2) {
+            setSuggestions([]);
+            return;
+        }
+        const { data } = await supabase
+            .from('farmers')
+            .select('id, name, mobile, place')
+            .ilike('name', `%${query}%`)
+            .limit(5);
+        if (data) setSuggestions(data);
+    };
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        onChange(val);
+        searchFarmers(val);
+        setShowSuggestions(true);
+    };
+
+    const handleSelect = (farmer: any) => {
+        onChange(farmer.name);
+        onSelect(farmer);
+        setShowSuggestions(false);
+        playSuccessHaptic();
+    };
+
+    return (
+        <div ref={wrapperRef} style={{ position: 'relative' }}>
+            <input
+                ref={inputRef}
+                type="text"
+                value={value}
+                onChange={handleInputChange}
+                onFocus={() => value.length >= 2 && setShowSuggestions(true)}
+                placeholder="Start typing farmer name..."
+                autoFocus
+                style={{
+                    width: '100%',
+                    padding: '0.75rem 2.5rem 0.75rem 0.875rem',
+                    fontSize: 'var(--text-base)',
+                    fontWeight: 500,
+                    border: existingFarmerId
+                        ? '2px solid var(--success)'
+                        : '1px solid var(--border-light)',
+                    borderRadius: 'var(--radius-lg)',
+                    background: existingFarmerId
+                        ? 'rgba(16, 185, 129, 0.05)'
+                        : 'var(--bg-subtle)',
+                    color: 'var(--text-main)',
+                    transition: 'all var(--transition-fast)'
+                }}
+            />
+            {existingFarmerId && (
+                <div style={{
+                    position: 'absolute',
+                    right: '0.75rem',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '50%',
+                    background: 'var(--success)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                }}>
+                    <Check size={14} style={{ color: 'white' }} />
+                </div>
+            )}
+
+            {/* Suggestions Dropdown */}
+            {showSuggestions && suggestions.length > 0 && (
+                <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    marginTop: '0.25rem',
+                    background: 'var(--bg-card)',
+                    borderRadius: 'var(--radius-lg)',
+                    boxShadow: '0 10px 30px -5px rgba(0,0,0,0.15)',
+                    border: '1px solid var(--border-light)',
+                    zIndex: 50,
+                    overflow: 'hidden'
+                }}>
+                    {suggestions.map((farmer, index) => (
+                        <button
+                            key={farmer.id}
+                            type="button"
+                            onClick={() => handleSelect(farmer)}
+                            style={{
+                                width: '100%',
+                                padding: '0.75rem 1rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.75rem',
+                                background: 'transparent',
+                                border: 'none',
+                                borderBottom: index < suggestions.length - 1
+                                    ? '1px solid var(--border-light)'
+                                    : 'none',
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                transition: 'background 0.15s'
+                            }}
+                        >
+                            <div style={{
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: 'var(--radius-md)',
+                                background: 'var(--primary-light)',
+                                color: 'var(--primary)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: 600,
+                                fontSize: 'var(--text-xs)'
+                            }}>
+                                {farmer.name.substring(0, 2).toUpperCase()}
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <div style={{
+                                    fontSize: 'var(--text-sm)',
+                                    fontWeight: 600,
+                                    color: 'var(--text-main)'
+                                }}>
+                                    {farmer.name}
+                                </div>
+                                <div style={{
+                                    fontSize: 'var(--text-xs)',
+                                    color: 'var(--text-muted)'
+                                }}>
+                                    {farmer.place || 'No location'} • {farmer.mobile || 'No mobile'}
+                                </div>
+                            </div>
+                        </button>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
+// Machine Selection Chips Component
+const MachineChips: React.FC<{
+    machines: any[];
+    selected: string;
+    onSelect: (id: string) => void;
+}> = ({ machines, selected, onSelect }) => (
+    <div style={{
+        display: 'flex',
+        gap: '0.5rem',
+        overflowX: 'auto',
+        paddingBottom: '4px',
+        WebkitOverflowScrolling: 'touch'
+    }}>
+        {machines.map(m => {
+            const isSelected = selected === m.id;
+            return (
+                <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => { playClickHaptic(); onSelect(m.id); }}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.375rem',
+                        padding: '0.5rem 1rem',
+                        fontSize: 'var(--text-xs)',
+                        fontWeight: 600,
+                        whiteSpace: 'nowrap',
+                        borderRadius: 'var(--radius-full)',
+                        border: isSelected
+                            ? 'none'
+                            : '1px solid var(--border-light)',
+                        background: isSelected
+                            ? 'linear-gradient(135deg, var(--primary), #059669)'
+                            : 'var(--bg-subtle)',
+                        color: isSelected ? 'white' : 'var(--text-secondary)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        boxShadow: isSelected
+                            ? '0 2px 8px rgba(5, 150, 105, 0.25)'
+                            : 'none',
+                        transform: isSelected ? 'scale(1.02)' : 'scale(1)'
+                    }}
+                >
+                    {isSelected && <Check size={12} />}
+                    {m.name}
+                </button>
+            );
+        })}
+    </div>
+);
+
+// Form Field with Hint Component
+const FormField: React.FC<{
+    label: React.ReactNode;
+    hint?: string;
+    error?: string;
+    required?: boolean;
+    children: React.ReactNode;
+}> = ({ label, hint, error, required, children }) => (
+    <div style={{ marginBottom: '0.75rem' }}>
+        <label style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.25rem',
+            fontSize: 'var(--text-xs)',
+            fontWeight: 500,
+            color: error ? 'var(--error)' : 'var(--text-muted)',
+            marginBottom: '0.375rem'
+        }}>
+            {label}
+            {required && <span style={{ color: 'var(--error)' }}>*</span>}
+        </label>
+        {children}
+        {(hint || error) && (
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+                marginTop: '0.25rem',
+                fontSize: '0.65rem',
+                color: error ? 'var(--error)' : 'var(--text-muted)'
+            }}>
+                {error && <AlertCircle size={10} />}
+                {error || hint}
+            </div>
+        )}
+    </div>
+);
+
+
+
+// Success Animation Overlay
+const SuccessAnimation: React.FC<{
+    show: boolean;
+    onComplete: () => void;
+}> = ({ show, onComplete }) => {
+    useEffect(() => {
+        if (show) {
+            const timer = setTimeout(onComplete, 1500);
+            return () => clearTimeout(timer);
+        }
+    }, [show, onComplete]);
+
+    if (!show) return null;
+
+    return (
+        <div style={{
+            position: 'fixed',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(0,0,0,0.4)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 100,
+            animation: 'fadeIn 0.2s ease-out'
+        }}>
+            <div style={{
+                width: '120px',
+                height: '120px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, var(--success), #059669)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                animation: 'scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                boxShadow: '0 20px 60px rgba(16, 185, 129, 0.4)'
+            }}>
+                <Check size={60} style={{ color: 'white' }} />
+            </div>
+        </div>
+    );
+};
 
 const FarmersPage: React.FC = () => {
     // ... (Keep existing state)
@@ -24,6 +325,7 @@ const FarmersPage: React.FC = () => {
 
     // State for Collapsible Form
     const [showForm, setShowForm] = useState(false);
+    const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
 
     // Form Fields
     const [name, setName] = useState('');
@@ -32,6 +334,9 @@ const FarmersPage: React.FC = () => {
     const [crop, setCrop] = useState('');
     const [existingFarmerId, setExistingFarmerId] = useState<string | null>(null);
     const [jobDate, setJobDate] = useState<string>(new Date().toISOString().split('T')[0]); // Default to today YYYY-MM-DD
+
+    // Form Validation Errors
+    const [errors, setErrors] = useState<Record<string, string>>({});
 
     // Loading & Data State
     const [isSaving, setIsSaving] = useState(false);
@@ -65,26 +370,12 @@ const FarmersPage: React.FC = () => {
         }
     }, [paymentType, total]);
 
-    const checkMobile = async () => {
-        if (!mobile || mobile.length < 5) return;
-        try {
-            const { data } = await supabase
-                .from('farmers')
-                .select('*')
-                .eq('mobile', mobile)
-                .single();
-
-            if (data) {
-                setExistingFarmerId(data.id);
-                setName(data.name);
-                setPlace(data.place || '');
-                playSuccessHaptic(); // Slight feedback on found
-            } else {
-                setExistingFarmerId(null);
-            }
-        } catch (err) {
-            setExistingFarmerId(null);
-        }
+    const handleFarmerSelect = (farmer: any) => {
+        setExistingFarmerId(farmer.id);
+        setName(farmer.name);
+        setMobile(farmer.mobile || '');
+        setPlace(farmer.place || '');
+        setErrors(prev => ({ ...prev, name: '' }));
     };
 
     // Auto-calculate Total
@@ -151,10 +442,27 @@ const FarmersPage: React.FC = () => {
         fetchMachines();
     }, []);
 
+    // Validate Form
+    const validateForm = (): boolean => {
+        const newErrors: Record<string, string> = {};
+
+        if (!name.trim()) {
+            newErrors.name = 'Farmer name is required';
+        }
+        if (!measurement) {
+            newErrors.measurement = 'Enter acres or hours';
+        }
+        if (!rate) {
+            newErrors.rate = 'Enter rate per unit';
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     const handleSave = async () => {
-        if (!name || !measurement || !rate) {
+        if (!validateForm()) {
             playErrorHaptic();
-            toast.error('Please fill in Name, Measurement, and Rate');
             return;
         }
 
@@ -206,7 +514,9 @@ const FarmersPage: React.FC = () => {
             }
 
             playSuccessHaptic();
-            toast.success('Record Saved Successfully!');
+
+            // Show success animation
+            setShowSuccessAnimation(true);
 
             if (userId) {
                 localStorage.setItem(`user_${userId}_default_place`, place);
@@ -214,15 +524,16 @@ const FarmersPage: React.FC = () => {
                 if (selectedMachine) localStorage.setItem(`user_${userId}_default_machine`, selectedMachine);
             }
 
+            // Reset form
             setName('');
             setMobile('');
             setMeasurement('');
             setPaidAmount('');
             setPaymentType('Pending');
             setExistingFarmerId(null);
+            setErrors({});
 
             fetchRecentJobs();
-            setShowForm(false); // Close form on mobile/desktop naturally
 
         } catch (error: any) {
             playErrorHaptic();
@@ -231,6 +542,12 @@ const FarmersPage: React.FC = () => {
         } finally {
             setIsSaving(false);
         }
+    };
+
+    const handleSuccessComplete = () => {
+        setShowSuccessAnimation(false);
+        setShowForm(false);
+        toast.success('Record Saved Successfully!');
     };
 
     const handleShare = (job: any) => {
@@ -242,10 +559,10 @@ const FarmersPage: React.FC = () => {
 
         const balance = job.total_amount - (job.paid_amount || 0);
         const dateStr = new Date(job.date).toLocaleDateString();
-        const place = job.farmers.place ? ` (${job.farmers.place})` : '';
+        const pl = job.farmers.place ? ` (${job.farmers.place})` : '';
 
         const message = `*HARVEST BILL*%0A` +
-            `*${job.farmers.name}*${place}%0A` +
+            `*${job.farmers.name}*${pl}%0A` +
             `${dateStr}%0A` +
             `--------------------------------%0A` +
             `${job.crop || 'Crop'} | ${job.quantity} ${job.billing_mode === 'acre' ? 'Acres' : 'Hours'} x ₹${job.rate}%0A` +
@@ -310,38 +627,102 @@ const FarmersPage: React.FC = () => {
         a.click();
     };
 
+    // Calculate today's acres
+    const todayAcres = recentJobs
+        .filter(j => new Date(j.date).toDateString() === new Date().toDateString())
+        .reduce((sum, j) => sum + (j.billing_mode === 'acre' ? Number(j.quantity) : 0), 0);
+
     return (
-        <div style={{ width: '100%', maxWidth: '800px', margin: '0 auto' }}>
-            <header style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div>
-                    <h1 style={{ fontSize: '1.5rem', marginBottom: '0.25rem', fontWeight: 700 }}>Farmers & Jobs</h1>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Manage records</span>
-                        <div style={{
-                            padding: '2px 8px', borderRadius: '12px', background: '#F0FDF4', color: '#15803D',
-                            fontSize: '0.75rem', fontWeight: 700, border: '1px solid #BBF7D0'
+        <div className="animate-fade-in" style={{ width: '100%', maxWidth: '800px', margin: '0 auto' }}>
+            {/* Success Animation */}
+            <SuccessAnimation
+                show={showSuccessAnimation}
+                onComplete={handleSuccessComplete}
+            />
+
+            {/* Header */}
+            <header style={{ marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                        <h1 style={{
+                            fontSize: 'var(--text-xl)',
+                            fontWeight: 700,
+                            color: 'var(--text-main)',
+                            marginBottom: '0.375rem',
+                            letterSpacing: '-0.02em'
                         }}>
-                            Today: {
-                                recentJobs
-                                    .filter(j => new Date(j.date).toDateString() === new Date().toDateString())
-                                    .reduce((sum, j) => sum + (j.billing_mode === 'acre' ? Number(j.quantity) : 0), 0)
-                                    .toFixed(1)
-                            } Ac
-                        </div>
+                            Farmers & Jobs
+                        </h1>
+                        <p style={{
+                            fontSize: 'var(--text-sm)',
+                            color: 'var(--text-muted)'
+                        }}>
+                            Track harvest work & payments
+                        </p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button
+                            onClick={handleExport}
+                            title="Export CSV"
+                            style={{
+                                width: '40px',
+                                height: '40px',
+                                background: 'var(--bg-subtle)',
+                                border: 'none',
+                                borderRadius: 'var(--radius-md)',
+                                color: 'var(--text-secondary)',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all var(--transition-fast)'
+                            }}
+                        >
+                            <Download size={18} />
+                        </button>
+                        <button
+                            onClick={() => { playClickHaptic(); setShowForm(!showForm); }}
+                            className="hide-on-mobile"
+                            style={{
+                                padding: '0.5rem 1rem',
+                                fontSize: 'var(--text-sm)',
+                                fontWeight: 600,
+                                background: 'var(--primary)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: 'var(--radius-md)',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.375rem',
+                                transition: 'all var(--transition-fast)'
+                            }}
+                        >
+                            <Plus size={16} />
+                            {showForm ? 'Cancel' : 'New Entry'}
+                        </button>
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button onClick={handleExport} className="icon-btn" title="Export CSV" style={{ background: '#F3F4F6', color: '#4B5563' }}>
-                        <Download size={20} />
-                    </button>
-                    <button
-                        onClick={() => { playClickHaptic(); setShowForm(!showForm); }}
-                        className="btn btn-primary hide-on-mobile"
-                        style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', borderRadius: '8px', minHeight: '40px' }}
-                    >
-                        {showForm ? 'Cancel' : 'New Entry'}
-                    </button>
+                {/* Today's Summary Badge */}
+                <div style={{
+                    marginTop: '1rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.5rem 0.875rem',
+                    background: 'var(--primary-light)',
+                    borderRadius: 'var(--radius-full)',
+                    border: '1px solid rgba(5, 150, 105, 0.15)'
+                }}>
+                    <Wheat size={14} style={{ color: 'var(--primary)' }} />
+                    <span style={{
+                        fontSize: 'var(--text-xs)',
+                        fontWeight: 600,
+                        color: 'var(--primary)'
+                    }}>
+                        Today: {todayAcres.toFixed(1)} Acres
+                    </span>
                 </div>
             </header>
 
@@ -350,214 +731,431 @@ const FarmersPage: React.FC = () => {
                 <button
                     className="fab-btn"
                     onClick={() => { playClickHaptic(); setShowForm(!showForm); }}
-                    style={{ transform: showForm ? 'rotate(45deg)' : 'rotate(0)' }}
+                    style={{
+                        transform: showForm ? 'rotate(45deg)' : 'rotate(0)',
+                        transition: 'transform var(--transition-bounce)'
+                    }}
                 >
                     <Plus size={28} />
                 </button>
             </div>
 
-            {/* Form Section - Auto scroll to it when shown on mobile? */}
+            {/* Form Section with Better Visual Hierarchy */}
             {showForm && (
-                <div className="card" style={{ marginBottom: '2rem', animation: 'fadeIn 0.2s ease-out', width: '100%' }}>
-                    <h2 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        New Work Record
-                        <button onClick={() => setShowForm(false)} style={{ color: 'var(--text-secondary)' }}><X size={20} /></button>
-                    </h2>
+                <div className="animate-scale-in" style={{
+                    marginBottom: '2rem',
+                    width: '100%',
+                    background: 'var(--bg-card)',
+                    borderRadius: 'var(--radius-xl)',
+                    padding: '1.25rem',
+                    boxShadow: 'var(--shadow-card)',
+                    border: '1px solid var(--border-light)'
+                }}>
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '1.25rem',
+                        paddingBottom: '0.875rem',
+                        borderBottom: '1px solid var(--border-light)'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <div style={{
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: 'var(--radius-md)',
+                                background: 'var(--primary-light)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}>
+                                <Sparkles size={16} style={{ color: 'var(--primary)' }} />
+                            </div>
+                            <h2 style={{
+                                fontSize: 'var(--text-base)',
+                                fontWeight: 600,
+                                color: 'var(--text-main)'
+                            }}>
+                                New Work Record
+                            </h2>
+                        </div>
+                        <button
+                            onClick={() => setShowForm(false)}
+                            style={{
+                                background: 'var(--bg-subtle)',
+                                border: 'none',
+                                borderRadius: 'var(--radius-md)',
+                                width: '32px',
+                                height: '32px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                color: 'var(--text-secondary)',
+                                transition: 'all var(--transition-fast)'
+                            }}
+                        >
+                            <X size={18} />
+                        </button>
+                    </div>
 
                     <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
-                        {/* Fields remain mostly same, just ensuring compact inputs work */}
-                        <div className="input-group" style={{ marginBottom: '0.75rem' }}>
-                            <label className="label" style={{ fontSize: '0.75rem' }}>Farmer Name</label>
-                            <div style={{ position: 'relative' }}>
-                                <input
-                                    type="text"
-                                    className="input input-compact"
-                                    placeholder="Name"
-                                    style={{ padding: '0.6rem', fontSize: '0.9rem', width: '100%' }}
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    autoFocus
-                                />
-                                {existingFarmerId && <Check size={14} color="var(--primary)" style={{ position: 'absolute', right: '8px', top: '10px' }} />}
+                        {/* Section 1: Farmer Info */}
+                        <div style={{
+                            marginBottom: '1.25rem',
+                            paddingBottom: '1rem',
+                            borderBottom: '1px dashed var(--border-light)'
+                        }}>
+                            <div style={{
+                                fontSize: '0.65rem',
+                                fontWeight: 600,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.1em',
+                                color: 'var(--text-muted)',
+                                marginBottom: '0.75rem'
+                            }}>
+                                Farmer Details
                             </div>
-                        </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                            <div className="input-group" style={{ marginBottom: 0 }}>
-                                <label className="label" style={{ fontSize: '0.75rem' }}>Mobile</label>
-                                <input
+                            {/* Farmer Name Autocomplete */}
+                            <FormField
+                                label="Farmer Name"
+                                required
+                                error={errors.name}
+                                hint={existingFarmerId ? 'Existing farmer selected' : 'Start typing to search'}
+                            >
+                                <FarmerAutocomplete
+                                    value={name}
+                                    onChange={setName}
+                                    onSelect={handleFarmerSelect}
+                                    existingFarmerId={existingFarmerId}
+                                />
+                            </FormField>
+
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: '1fr 1fr',
+                                gap: '0.75rem'
+                            }}>
+                                <FloatingInput
+                                    label="Mobile"
                                     type="tel"
-                                    className="input input-compact"
-                                    placeholder="98765..."
-                                    style={{ padding: '0.6rem', fontSize: '0.9rem' }}
                                     value={mobile}
                                     onChange={(e) => setMobile(e.target.value)}
-                                    onBlur={checkMobile}
+                                    placeholder="98765..."
+                                    maxLength={10}
                                 />
-                            </div>
-                            <div className="input-group" style={{ marginBottom: 0 }}>
-                                <label className="label" style={{ fontSize: '0.75rem' }}>Date</label>
-                                <input
-                                    type="date"
-                                    className="input input-compact"
-                                    style={{ padding: '0.6rem', fontSize: '0.85rem', width: '100%' }}
-                                    value={jobDate}
-                                    onChange={(e) => setJobDate(e.target.value)}
-                                />
-                            </div>
-                        </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                            <div className="input-group" style={{ marginBottom: 0 }}>
-                                <label className="label" style={{ fontSize: '0.75rem' }}>Village</label>
-                                <input
+                                <FloatingInput
+                                    label="Village"
                                     type="text"
-                                    className="input input-compact"
-                                    placeholder="Village"
-                                    style={{ padding: '0.6rem', fontSize: '0.9rem' }}
                                     value={place}
                                     onChange={(e) => setPlace(e.target.value)}
+                                    placeholder="Village Name"
                                     list="village-options"
                                 />
                                 <datalist id="village-options">
                                     {allVillages.map((v, i) => <option key={i} value={v} />)}
                                 </datalist>
                             </div>
-                            <div className="input-group" style={{ marginBottom: 0 }}>
-                                <label className="label" style={{ fontSize: '0.75rem' }}>Crop</label>
-                                <input
+                        </div>
+
+                        {/* Section 2: Work Info */}
+                        <div style={{
+                            marginBottom: '1.25rem',
+                            paddingBottom: '1rem',
+                            borderBottom: '1px dashed var(--border-light)'
+                        }}>
+                            <div style={{
+                                fontSize: '0.65rem',
+                                fontWeight: 600,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.1em',
+                                color: 'var(--text-muted)',
+                                marginBottom: '0.75rem'
+                            }}>
+                                Work Details
+                            </div>
+
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: '1fr 1fr',
+                                gap: '0.75rem',
+                                marginBottom: '0.75rem'
+                            }}>
+                                <FloatingInput
+                                    label="Crop"
                                     type="text"
-                                    className="input input-compact"
-                                    placeholder="Crop"
-                                    style={{ padding: '0.6rem', fontSize: '0.9rem' }}
                                     value={crop}
                                     onChange={(e) => setCrop(e.target.value)}
+                                    placeholder="Paddy, Wheat..."
+                                />
+
+                                <FloatingInput
+                                    label="Date"
+                                    type="date"
+                                    value={jobDate}
+                                    onChange={(e) => setJobDate(e.target.value)}
                                 />
                             </div>
+
+                            {/* Machine Chips */}
+                            <FormField label="Machine" hint="Select harvester used">
+                                <MachineChips
+                                    machines={machines}
+                                    selected={selectedMachine}
+                                    onSelect={setSelectedMachine}
+                                />
+                            </FormField>
                         </div>
 
-                        <div className="input-group" style={{ marginBottom: '0.75rem' }}>
-                            <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '4px' }}>
-                                {machines.map(m => (
-                                    <button
-                                        key={m.id}
-                                        type="button"
-                                        className={`btn ${selectedMachine === m.id ? 'btn-primary' : 'btn-white'}`}
-                                        style={{
-                                            border: selectedMachine === m.id ? 'none' : '1px solid var(--border-light)',
-                                            color: selectedMachine === m.id ? 'white' : 'var(--text-main)',
-                                            padding: '0.4rem 0.8rem', fontSize: '0.75rem', whiteSpace: 'nowrap',
-                                            borderRadius: '20px'
-                                        }}
-                                        onClick={() => { playClickHaptic(); setSelectedMachine(m.id); }}
-                                    >
-                                        {m.name}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
+                        {/* Section 3: Billing */}
                         <div style={{
-                            display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', gap: '0.5rem', marginBottom: '1rem',
-                            background: '#F9FAFB', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-light)'
+                            background: 'var(--bg-subtle)',
+                            borderRadius: 'var(--radius-lg)',
+                            padding: '1rem',
+                            marginBottom: '1rem',
+                            border: '1px solid var(--border-light)'
                         }}>
-                            <div className="input-group" style={{ marginBottom: 0 }}>
-                                <label className="label" style={{ fontSize: '0.7rem' }}>
-                                    <span onClick={() => setBillingMode(billingMode === 'acre' ? 'hour' : 'acre')} style={{ borderBottom: '1px dashed #999', cursor: 'pointer' }}>
-                                        {billingMode === 'acre' ? 'Acres' : 'Hours'}
-                                    </span>
-                                </label>
-                                <input
-                                    type="number"
-                                    className="input input-compact"
-                                    step="0.1"
-                                    placeholder="0"
-                                    style={{ padding: '0.5rem', textAlign: 'center', fontWeight: 600 }}
-                                    value={measurement}
-                                    onChange={(e) => setMeasurement(Number(e.target.value))}
-                                />
-                            </div>
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: '1fr 1fr 1.2fr',
+                                gap: '0.75rem',
+                                alignItems: 'end'
+                            }}>
+                                <FormField
+                                    label={
+                                        <span
+                                            onClick={() => setBillingMode(billingMode === 'acre' ? 'hour' : 'acre')}
+                                            style={{
+                                                borderBottom: '1px dashed var(--text-muted)',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            {billingMode === 'acre' ? 'Acres' : 'Hours'}
+                                        </span>
+                                    }
+                                    required
+                                    error={errors.measurement}
+                                >
+                                    <input
+                                        type="number"
+                                        step="0.1"
+                                        placeholder="0"
+                                        value={measurement}
+                                        onChange={(e) => setMeasurement(Number(e.target.value))}
+                                        style={{
+                                            width: '100%',
+                                            padding: '0.75rem',
+                                            fontSize: 'var(--text-lg)',
+                                            fontWeight: 700,
+                                            textAlign: 'center',
+                                            border: errors.measurement
+                                                ? '2px solid var(--error)'
+                                                : '1px solid var(--border-light)',
+                                            borderRadius: 'var(--radius-lg)',
+                                            background: 'var(--bg-card)',
+                                            color: 'var(--text-main)'
+                                        }}
+                                    />
+                                </FormField>
 
-                            <div className="input-group" style={{ marginBottom: 0 }}>
-                                <label className="label" style={{ fontSize: '0.7rem' }}>Rate</label>
-                                <input
+                                <FloatingInput
+                                    label="Rate (₹)"
                                     type="number"
-                                    className="input input-compact"
-                                    placeholder="0"
-                                    style={{ padding: '0.5rem', textAlign: 'center' }}
                                     value={rate}
                                     onChange={(e) => setRate(Number(e.target.value))}
+                                    placeholder="0"
+                                    error={errors.rate}
                                 />
-                            </div>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-end', paddingLeft: '0.5rem', borderLeft: '1px solid #E5E7EB' }}>
-                                <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Total</span>
-                                <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary)' }}>₹{total.toLocaleString()}</span>
+                                <div style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    padding: '0.75rem',
+                                    background: 'linear-gradient(135deg, var(--primary-light), rgba(5, 150, 105, 0.1))',
+                                    borderRadius: 'var(--radius-lg)',
+                                    border: '1px solid rgba(5, 150, 105, 0.2)'
+                                }}>
+                                    <span style={{
+                                        fontSize: '0.65rem',
+                                        color: 'var(--primary)',
+                                        fontWeight: 500,
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.05em'
+                                    }}>
+                                        Total
+                                    </span>
+                                    <span style={{
+                                        fontSize: '1.5rem',
+                                        fontWeight: 700,
+                                        color: 'var(--primary)',
+                                        letterSpacing: '-0.02em'
+                                    }}>
+                                        ₹{total.toLocaleString('en-IN')}
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '1rem' }}>
-                            <div style={{ display: 'flex', background: '#F3F4F6', padding: '3px', borderRadius: '8px', flex: 1 }}>
-                                {(['Pending', 'Partial', 'Paid'] as const).map((status) => (
-                                    <button
-                                        key={status}
-                                        type="button"
-                                        onClick={() => { playClickHaptic(); setPaymentType(status); }}
-                                        style={{
-                                            flex: 1,
-                                            padding: '0.4rem',
-                                            fontSize: '0.75rem',
-                                            fontWeight: 600,
-                                            borderRadius: '6px',
-                                            background: paymentType === status ? 'white' : 'transparent',
-                                            color: paymentType === status ? (status === 'Pending' ? '#EF4444' : (status === 'Paid' ? '#10B981' : '#F59E0B')) : '#6B7280',
-                                            boxShadow: paymentType === status ? '0 1px 2px rgba(0,0,0,0.1)' : 'none',
-                                            transition: 'all 0.2s'
-                                        }}
-                                    >
-                                        {status}
-                                    </button>
-                                ))}
+                        {/* Payment Status Toggle */}
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '0.5rem',
+                            marginBottom: '1rem'
+                        }}>
+                            <div style={{
+                                display: 'flex',
+                                background: 'var(--bg-subtle)',
+                                padding: '4px',
+                                borderRadius: 'var(--radius-lg)',
+                                flex: 1,
+                                border: '1px solid var(--border-light)'
+                            }}>
+                                {(['Pending', 'Partial', 'Paid'] as const).map((status) => {
+                                    const isActive = paymentType === status;
+                                    const colors = {
+                                        Pending: { bg: '#FEE2E2', color: '#DC2626' },
+                                        Partial: { bg: '#FEF3C7', color: '#D97706' },
+                                        Paid: { bg: '#D1FAE5', color: '#059669' }
+                                    };
+                                    return (
+                                        <button
+                                            key={status}
+                                            type="button"
+                                            onClick={() => { playClickHaptic(); setPaymentType(status); }}
+                                            style={{
+                                                flex: 1,
+                                                padding: '0.5rem',
+                                                fontSize: 'var(--text-xs)',
+                                                fontWeight: 600,
+                                                borderRadius: 'var(--radius-md)',
+                                                border: 'none',
+                                                background: isActive ? colors[status].bg : 'transparent',
+                                                color: isActive ? colors[status].color : 'var(--text-muted)',
+                                                boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                                                transition: 'all 0.2s',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            {status}
+                                        </button>
+                                    );
+                                })}
                             </div>
 
                             {paymentType === 'Partial' && (
-                                <div style={{ flex: 0.7, animation: 'fadeIn 0.2s' }}>
+                                <div style={{ flex: 0.6, animation: 'fadeIn 0.2s' }}>
                                     <input
                                         type="number"
-                                        className="input input-compact"
-                                        placeholder="Enter Amount"
+                                        placeholder="Paid ₹"
                                         value={paidAmount}
                                         onChange={e => setPaidAmount(e.target.value === '' ? '' : Number(e.target.value))}
-                                        style={{ padding: '0.4rem', fontSize: '0.9rem', height: '34px', width: '100%' }}
+                                        style={{
+                                            width: '100%',
+                                            padding: '0.5rem 0.75rem',
+                                            fontSize: 'var(--text-sm)',
+                                            fontWeight: 600,
+                                            border: '1px solid var(--border-light)',
+                                            borderRadius: 'var(--radius-md)',
+                                            background: 'var(--bg-card)',
+                                            color: 'var(--text-main)'
+                                        }}
                                         autoFocus
                                     />
                                 </div>
                             )}
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border-light)' }}>
-                            <button type="button" onClick={() => setShowForm(false)} className="btn btn-secondary btn-sm" style={{ border: 'none' }}>Cancel</button>
+                        {/* Submit Buttons */}
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            gap: '0.75rem',
+                            paddingTop: '0.75rem',
+                            borderTop: '1px solid var(--border-light)'
+                        }}>
+                            <button
+                                type="button"
+                                onClick={() => setShowForm(false)}
+                                style={{
+                                    padding: '0.625rem 1.25rem',
+                                    fontSize: 'var(--text-sm)',
+                                    fontWeight: 500,
+                                    background: 'var(--bg-subtle)',
+                                    color: 'var(--text-secondary)',
+                                    border: 'none',
+                                    borderRadius: 'var(--radius-md)',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Cancel
+                            </button>
                             <button
                                 type="submit"
-                                className="btn btn-primary btn-sm"
-                                style={{ padding: '0.5rem 2rem', fontSize: '0.9rem' }}
                                 disabled={isSaving}
+                                style={{
+                                    padding: '0.625rem 2rem',
+                                    fontSize: 'var(--text-sm)',
+                                    fontWeight: 600,
+                                    background: 'linear-gradient(135deg, var(--primary), #059669)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: 'var(--radius-md)',
+                                    cursor: isSaving ? 'not-allowed' : 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    boxShadow: '0 4px 12px rgba(5, 150, 105, 0.3)',
+                                    opacity: isSaving ? 0.7 : 1,
+                                    transition: 'all var(--transition-fast)'
+                                }}
                             >
-                                {isSaving ? <Loader2 className="animate-spin" size={16} /> : 'Save Entry'}
+                                {isSaving ? (
+                                    <Loader2 className="animate-spin" size={16} />
+                                ) : (
+                                    <Check size={16} />
+                                )}
+                                Save Entry
                             </button>
                         </div>
                     </form>
-                </div >
+                </div>
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', gap: '1rem' }}>
-                <h3 style={{ margin: 0, fontSize: '1.1rem', whiteSpace: 'nowrap' }}>Recent Records</h3>
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '1rem'
+            }}>
+                <h3 style={{
+                    margin: 0,
+                    fontSize: 'var(--text-base)',
+                    fontWeight: 600,
+                    color: 'var(--text-main)'
+                }}>
+                    Recent Records
+                </h3>
                 <button
-                    className="btn btn-secondary"
                     onClick={() => { playClickHaptic(); setShowHistory(true); }}
-                    style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', height: 'auto', whiteSpace: 'nowrap' }}
+                    style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--primary)',
+                        fontSize: 'var(--text-sm)',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.25rem'
+                    }}
                 >
-                    View All
+                    View all <ChevronRight size={16} />
                 </button>
             </div>
 
@@ -567,25 +1165,49 @@ const FarmersPage: React.FC = () => {
                         {Array(3).fill(0).map((_, i) => (
                             <div key={i} className="card" style={{ padding: '1rem', width: '100%' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                        <Skeleton width={120} height={20} />
-                                        <Skeleton width={80} height={15} />
+                                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                                        <Skeleton width={44} height={44} borderRadius={12} />
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                            <Skeleton width={120} height={18} />
+                                            <Skeleton width={80} height={14} />
+                                        </div>
                                     </div>
-                                    <Skeleton width={60} height={24} />
+                                    <Skeleton width={60} height={24} borderRadius={20} />
                                 </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem' }}>
-                                    <Skeleton width={80} height={15} />
-                                    <Skeleton width={100} height={28} />
-                                </div>
+                                <Skeleton width="100%" height={60} borderRadius={8} style={{ marginTop: '0.5rem' }} />
                             </div>
                         ))}
                     </div>
                 ) : recentJobs.length === 0 ? (
-                    <div className="card" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                        <div style={{ marginBottom: '1rem', display: 'inline-flex', padding: '1rem', background: 'var(--bg-main)', borderRadius: '50%' }}>
-                            <Users size={32} />
+                    <div style={{
+                        padding: '3rem',
+                        textAlign: 'center',
+                        background: 'var(--bg-card)',
+                        borderRadius: 'var(--radius-xl)',
+                        border: '1px solid var(--border-light)'
+                    }}>
+                        <div style={{
+                            marginBottom: '1rem',
+                            display: 'inline-flex',
+                            padding: '1.25rem',
+                            background: 'var(--primary-light)',
+                            borderRadius: 'var(--radius-full)'
+                        }}>
+                            <Users size={32} style={{ color: 'var(--primary)' }} />
                         </div>
-                        <p>No records yet. Tap + to add one.</p>
+                        <p style={{
+                            color: 'var(--text-muted)',
+                            fontSize: 'var(--text-sm)',
+                            marginBottom: '0.5rem'
+                        }}>
+                            No records yet
+                        </p>
+                        <p style={{
+                            color: 'var(--text-secondary)',
+                            fontSize: 'var(--text-xs)'
+                        }}>
+                            Tap the + button to add your first entry
+                        </p>
                     </div>
                 ) : (
                     <div style={{ display: 'grid', gap: '1rem', width: '100%' }}>
@@ -651,9 +1273,8 @@ const FarmersPage: React.FC = () => {
                     onClose={() => setSelectedReceiptJob(null)}
                 />
             )}
-        </div >
+        </div>
     );
 };
 
 export default FarmersPage;
-

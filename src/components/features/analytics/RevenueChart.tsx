@@ -1,6 +1,6 @@
-
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import chartTheme from '../../../lib/chart-theme';
 
 interface RevenueChartProps {
     data: {
@@ -10,40 +10,151 @@ interface RevenueChartProps {
     }[];
 }
 
-const RevenueChart: React.FC<RevenueChartProps> = ({ data }) => {
+// Custom Tooltip Component
+const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+        return (
+            <div style={chartTheme.tooltip.container}>
+                <div style={chartTheme.tooltip.title}>
+                    {label}
+                </div>
+                {payload.map((entry: any, index: number) => (
+                    <div
+                        key={index}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            fontSize: 'var(--text-xs)',
+                            marginBottom: '0.25rem'
+                        }}
+                    >
+                        <span style={{
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            background: entry.color
+                        }} />
+                        <span style={chartTheme.tooltip.label}>{entry.name}:</span>
+                        <span style={chartTheme.tooltip.value}>
+                            {chartTheme.formatFullCurrency(entry.value)}
+                        </span>
+                    </div>
+                ))}
+            </div>
+        );
+    }
+    return null;
+};
+
+// Custom Legend Component
+const CustomLegend = ({ payload }: any) => {
     return (
-        <div style={{ height: '300px', width: '100%' }}>
+        <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '1.5rem',
+            marginTop: '0.5rem'
+        }}>
+            {payload.map((entry: any, index: number) => (
+                <div
+                    key={index}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.375rem',
+                        fontSize: 'var(--text-xs)',
+                        color: 'var(--text-muted)'
+                    }}
+                >
+                    <span style={{
+                        width: '10px',
+                        height: '10px',
+                        borderRadius: '50%',
+                        background: entry.color
+                    }} />
+                    <span>{entry.value}</span>
+                </div>
+            ))}
+        </div>
+    );
+};
+
+const RevenueChart: React.FC<RevenueChartProps> = ({ data }) => {
+    // Detect if mobile (simplified check based on data length)
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+    // Simplify labels for mobile - only show every Nth item
+    const getTickFormatter = (value: string, index: number) => {
+        if (data.length <= 7) return value;
+        if (data.length <= 12 && index % 2 === 0) return value;
+        if (data.length > 12 && index % 5 === 0) return value;
+        return '';
+    };
+
+    return (
+        <div style={{ height: '280px', width: '100%' }}>
             <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                     data={data}
                     margin={{
-                        top: 20,
-                        right: 30,
-                        left: 0,
-                        bottom: 5,
+                        top: 10,
+                        right: 10,
+                        left: -10,
+                        bottom: 0,
                     }}
+                    barGap={2}
+                    barCategoryGap="20%"
                 >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                    <defs>
+                        <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
+                            {chartTheme.gradients.incomeGradient.stops.map((stop, i) => (
+                                <stop key={i} offset={stop.offset} stopColor={stop.color} stopOpacity={stop.opacity} />
+                            ))}
+                        </linearGradient>
+                        <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
+                            {chartTheme.gradients.expenseGradient.stops.map((stop, i) => (
+                                <stop key={i} offset={stop.offset} stopColor={stop.color} stopOpacity={stop.opacity} />
+                            ))}
+                        </linearGradient>
+                    </defs>
+                    <CartesianGrid
+                        strokeDasharray={chartTheme.grid.strokeDasharray}
+                        vertical={chartTheme.grid.vertical}
+                        stroke={chartTheme.grid.stroke}
+                        strokeOpacity={chartTheme.grid.strokeOpacity}
+                    />
                     <XAxis
                         dataKey="name"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: '#6B7280', fontSize: 12 }}
-                        dy={10}
+                        {...chartTheme.axis}
+                        dy={8}
+                        tickFormatter={getTickFormatter}
+                        interval={0}
                     />
                     <YAxis
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: '#6B7280', fontSize: 12 }}
-                        tickFormatter={(value) => `₹${value / 1000}k`}
+                        {...chartTheme.axis}
+                        tickFormatter={chartTheme.formatCurrency}
+                        width={50}
                     />
                     <Tooltip
-                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-                        cursor={{ fill: '#F3F4F6' }}
+                        content={<CustomTooltip />}
+                        cursor={{ fill: 'var(--bg-subtle)', radius: 4, opacity: 0.5 }}
                     />
-                    <Legend iconType="circle" />
-                    <Bar dataKey="income" name="Income" fill="#10B981" radius={[4, 4, 0, 0]} maxBarSize={40} />
-                    <Bar dataKey="expense" name="Expenses" fill="#EF4444" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                    <Legend content={<CustomLegend />} />
+                    <Bar
+                        dataKey="income"
+                        name="Income"
+                        fill="url(#incomeGradient)"
+                        radius={[4, 4, 0, 0]}
+                        maxBarSize={isMobile ? 20 : 35}
+                    />
+                    <Bar
+                        dataKey="expense"
+                        name="Expenses"
+                        fill="url(#expenseGradient)"
+                        radius={[4, 4, 0, 0]}
+                        maxBarSize={isMobile ? 20 : 35}
+                    />
                 </BarChart>
             </ResponsiveContainer>
         </div>

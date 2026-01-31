@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Droplet, Wrench, User, Coffee, CreditCard, Trash2, Loader2, Download, Landmark, Edit, X, Plus } from 'lucide-react';
+import { Droplet, Wrench, User, Coffee, CreditCard, Trash2, Loader2, Download, Landmark, Edit, X, Plus, ChevronRight, Receipt, Check, Calendar, TrendingDown } from 'lucide-react';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { supabase } from '../lib/supabase';
@@ -10,13 +9,280 @@ import ExpenseHistoryModal from '../components/modals/ExpenseHistoryModal';
 import toast from 'react-hot-toast';
 
 const CATEGORIES = [
-    { id: 'Fuel', label: 'Diesel / Fuel', icon: Droplet, color: '#FEE2E2', textColor: '#991B1B' },
-    { id: 'Spares & Repairs', label: 'Spares & Repairs', icon: Wrench, color: '#FEF3C7', textColor: '#92400E' },
-    { id: 'Driver Salary', label: 'Driver Salary', icon: User, color: '#DBEAFE', textColor: '#1E40AF' },
-    { id: 'Food', label: 'Food & Allowance', icon: Coffee, color: '#D1FAE5', textColor: '#065F46' },
-    { id: 'EMI', label: 'Machine EMI', icon: Landmark, color: '#E0E7FF', textColor: '#4338CA' },
-    { id: 'Other', label: 'Other Expenses', icon: CreditCard, color: '#F3F4F6', textColor: '#374151' }
+    { id: 'Fuel', label: 'Diesel / Fuel', shortLabel: 'Fuel', icon: Droplet, color: '#FEE2E2', textColor: '#DC2626' },
+    { id: 'Spares & Repairs', label: 'Spares & Repairs', shortLabel: 'Repairs', icon: Wrench, color: '#FEF3C7', textColor: '#D97706' },
+    { id: 'Driver Salary', label: 'Driver Salary', shortLabel: 'Salary', icon: User, color: '#DBEAFE', textColor: '#2563EB' },
+    { id: 'Food', label: 'Food & Allowance', shortLabel: 'Food', icon: Coffee, color: '#D1FAE5', textColor: '#059669' },
+    { id: 'EMI', label: 'Machine EMI', shortLabel: 'EMI', icon: Landmark, color: '#E0E7FF', textColor: '#4F46E5' },
+    { id: 'Other', label: 'Other Expenses', shortLabel: 'Other', icon: CreditCard, color: '#F3F4F6', textColor: '#6B7280' }
 ];
+
+// Category Grid Selector Component
+const CategoryGridSelector: React.FC<{
+    selected: string;
+    onSelect: (id: string) => void;
+}> = ({ selected, onSelect }) => (
+    <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: '0.75rem',
+        marginBottom: '1.25rem'
+    }}>
+        {CATEGORIES.map(cat => {
+            const isSelected = selected === cat.id;
+            const Icon = cat.icon;
+
+            return (
+                <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => { playClickHaptic(); onSelect(cat.id); }}
+                    style={{
+                        width: '100%',
+                        height: '80px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem',
+                        padding: '0.75rem',
+                        borderRadius: 'var(--radius-xl)',
+                        border: isSelected
+                            ? `2px solid ${cat.textColor}`
+                            : '1px solid var(--border-light)',
+                        backgroundColor: isSelected ? cat.color : 'var(--bg-subtle)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                        position: 'relative',
+                        transform: isSelected ? 'scale(1.02)' : 'scale(1)'
+                    }}
+                >
+                    {/* Checkmark for selected state */}
+                    {isSelected && (
+                        <div style={{
+                            position: 'absolute',
+                            top: '6px',
+                            right: '6px',
+                            width: '18px',
+                            height: '18px',
+                            borderRadius: '50%',
+                            background: cat.textColor,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}>
+                            <Check size={11} style={{ color: 'white' }} />
+                        </div>
+                    )}
+
+                    {/* Icon */}
+                    <div style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: 'var(--radius-lg)',
+                        background: isSelected ? 'white' : cat.color,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: cat.textColor,
+                        boxShadow: isSelected ? '0 2px 8px rgba(0,0,0,0.1)' : 'none'
+                    }}>
+                        <Icon size={18} />
+                    </div>
+
+                    {/* Label */}
+                    <span style={{
+                        fontSize: 'var(--text-xs)',
+                        fontWeight: isSelected ? 700 : 500,
+                        color: isSelected ? cat.textColor : 'var(--text-secondary)',
+                        textAlign: 'center',
+                        lineHeight: 1.2
+                    }}>
+                        {cat.shortLabel}
+                    </span>
+                </button>
+            );
+        })}
+    </div>
+);
+
+// Monthly Summary Card Component
+const MonthlySummaryCard: React.FC<{
+    expenses: any[];
+}> = ({ expenses }) => {
+    const now = new Date();
+    const thisMonth = now.getMonth();
+    const thisYear = now.getFullYear();
+    const lastMonth = thisMonth === 0 ? 11 : thisMonth - 1;
+    const lastMonthYear = thisMonth === 0 ? thisYear - 1 : thisYear;
+
+    const thisMonthTotal = expenses
+        .filter(e => {
+            const d = new Date(e.date);
+            return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+        })
+        .reduce((sum, e) => sum + (e.amount || 0), 0);
+
+    const lastMonthTotal = expenses
+        .filter(e => {
+            const d = new Date(e.date);
+            return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
+        })
+        .reduce((sum, e) => sum + (e.amount || 0), 0);
+
+    const percentChange = lastMonthTotal > 0
+        ? ((thisMonthTotal - lastMonthTotal) / lastMonthTotal) * 100
+        : 0;
+
+    const isUp = percentChange > 0;
+
+    // Get top category this month
+    const categoryTotals: Record<string, number> = {};
+    expenses
+        .filter(e => {
+            const d = new Date(e.date);
+            return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+        })
+        .forEach(e => {
+            categoryTotals[e.category] = (categoryTotals[e.category] || 0) + e.amount;
+        });
+
+    const topCategory = Object.entries(categoryTotals)
+        .sort((a, b) => b[1] - a[1])[0];
+
+    const topCatData = CATEGORIES.find(c => c.id === topCategory?.[0]);
+
+    return (
+        <div style={{
+            background: 'linear-gradient(135deg, var(--bg-card), var(--bg-subtle))',
+            borderRadius: 'var(--radius-xl)',
+            padding: '1.25rem',
+            marginBottom: '1.5rem',
+            border: '1px solid var(--border-light)',
+            boxShadow: 'var(--shadow-card)'
+        }}>
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                marginBottom: '1rem'
+            }}>
+                <div>
+                    <div style={{
+                        fontSize: 'var(--text-xs)',
+                        color: 'var(--text-muted)',
+                        fontWeight: 500,
+                        marginBottom: '0.25rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.375rem'
+                    }}>
+                        <Calendar size={12} />
+                        {now.toLocaleString('default', { month: 'long' })} Expenses
+                    </div>
+                    <div style={{
+                        fontSize: 'var(--text-2xl)',
+                        fontWeight: 700,
+                        color: 'var(--text-main)',
+                        letterSpacing: '-0.02em'
+                    }}>
+                        ₹{thisMonthTotal.toLocaleString('en-IN')}
+                    </div>
+                </div>
+
+                {lastMonthTotal > 0 && (
+                    <div style={{
+                        padding: '0.375rem 0.75rem',
+                        borderRadius: 'var(--radius-full)',
+                        background: isUp ? 'var(--error-light)' : 'var(--success-light)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.25rem'
+                    }}>
+                        <TrendingDown
+                            size={14}
+                            style={{
+                                color: isUp ? 'var(--error)' : 'var(--success)',
+                                transform: isUp ? 'rotate(180deg)' : 'none'
+                            }}
+                        />
+                        <span style={{
+                            fontSize: 'var(--text-xs)',
+                            fontWeight: 600,
+                            color: isUp ? 'var(--error)' : 'var(--success)'
+                        }}>
+                            {Math.abs(percentChange).toFixed(0)}%
+                        </span>
+                    </div>
+                )}
+            </div>
+
+            {/* Stats Row */}
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '0.75rem'
+            }}>
+                {/* Last Month Comparison */}
+                <div style={{
+                    padding: '0.75rem',
+                    background: 'var(--bg-subtle)',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1px solid var(--border-light)'
+                }}>
+                    <div style={{
+                        fontSize: '0.65rem',
+                        color: 'var(--text-muted)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        marginBottom: '0.25rem'
+                    }}>
+                        Last Month
+                    </div>
+                    <div style={{
+                        fontSize: 'var(--text-sm)',
+                        fontWeight: 600,
+                        color: 'var(--text-secondary)'
+                    }}>
+                        ₹{lastMonthTotal.toLocaleString('en-IN')}
+                    </div>
+                </div>
+
+                {/* Top Category */}
+                {topCatData && (
+                    <div style={{
+                        padding: '0.75rem',
+                        background: topCatData.color,
+                        borderRadius: 'var(--radius-lg)',
+                        border: `1px solid ${topCatData.textColor}20`
+                    }}>
+                        <div style={{
+                            fontSize: '0.65rem',
+                            color: topCatData.textColor,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            marginBottom: '0.25rem',
+                            opacity: 0.8
+                        }}>
+                            Top Category
+                        </div>
+                        <div style={{
+                            fontSize: 'var(--text-sm)',
+                            fontWeight: 600,
+                            color: topCatData.textColor,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.375rem'
+                        }}>
+                            <topCatData.icon size={14} />
+                            {topCatData.shortLabel}
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
 
 const ExpensesPage: React.FC = () => {
     const [showForm, setShowForm] = useState(false);
@@ -27,6 +293,7 @@ const ExpensesPage: React.FC = () => {
     const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
     const [recentExpenses, setRecentExpenses] = useState<any[]>([]);
+    const [allExpenses, setAllExpenses] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [editExpense, setEditExpense] = useState<any>(null);
@@ -47,13 +314,24 @@ const ExpensesPage: React.FC = () => {
 
     const fetchExpenses = async () => {
         setLoading(true);
-        const { data } = await supabase
+
+        // Fetch recent for list
+        const { data: recent } = await supabase
             .from('expenses')
             .select(`*, machines (name)`)
             .order('date', { ascending: false })
             .limit(20);
 
-        if (data) setRecentExpenses(data);
+        // Fetch all for monthly summary (last 60 days)
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 60);
+        const { data: all } = await supabase
+            .from('expenses')
+            .select('amount, date, category')
+            .gte('date', cutoff.toISOString().split('T')[0]);
+
+        if (recent) setRecentExpenses(recent);
+        if (all) setAllExpenses(all);
         setLoading(false);
     };
 
@@ -86,7 +364,7 @@ const ExpensesPage: React.FC = () => {
             setAmount('');
             setDescription('');
             fetchExpenses();
-            setShowForm(false); // Close form after save
+            setShowForm(false);
 
         } catch (err) {
             playErrorHaptic();
@@ -137,32 +415,86 @@ const ExpensesPage: React.FC = () => {
     };
 
     return (
-        <div style={{ width: '100%', maxWidth: '800px', margin: '0 auto' }}>
-            <header style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div>
-                    <h1 style={{ fontSize: '1.5rem', marginBottom: '0.25rem', fontWeight: 700 }}>Expenses</h1>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Track spending & costs.</p>
-                </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button onClick={handleExport} className="icon-btn" title="Export CSV" style={{ background: '#F3F4F6', color: '#4B5563' }}>
-                        <Download size={20} />
-                    </button>
-                    <button
-                        onClick={() => { playClickHaptic(); setShowForm(!showForm); }}
-                        className="btn btn-primary hide-on-mobile"
-                        style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', borderRadius: '8px', minHeight: '40px' }}
-                    >
-                        {showForm ? 'Cancel' : 'New Entry'}
-                    </button>
+        <div className="animate-fade-in" style={{ width: '100%', maxWidth: '800px', margin: '0 auto' }}>
+            {/* Header */}
+            <header style={{ marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                        <h1 style={{
+                            fontSize: 'var(--text-xl)',
+                            fontWeight: 700,
+                            color: 'var(--text-main)',
+                            marginBottom: '0.375rem',
+                            letterSpacing: '-0.02em'
+                        }}>
+                            Expenses
+                        </h1>
+                        <p style={{
+                            fontSize: 'var(--text-sm)',
+                            color: 'var(--text-muted)'
+                        }}>
+                            Track spending & costs
+                        </p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button
+                            onClick={handleExport}
+                            title="Export CSV"
+                            style={{
+                                width: '40px',
+                                height: '40px',
+                                background: 'var(--bg-subtle)',
+                                border: 'none',
+                                borderRadius: 'var(--radius-md)',
+                                color: 'var(--text-secondary)',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all var(--transition-fast)'
+                            }}
+                        >
+                            <Download size={18} />
+                        </button>
+                        <button
+                            onClick={() => { playClickHaptic(); setShowForm(!showForm); }}
+                            className="hide-on-mobile"
+                            style={{
+                                padding: '0.5rem 1rem',
+                                fontSize: 'var(--text-sm)',
+                                fontWeight: 600,
+                                background: 'var(--primary)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: 'var(--radius-md)',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.375rem',
+                                transition: 'all var(--transition-fast)'
+                            }}
+                        >
+                            <Plus size={16} />
+                            {showForm ? 'Cancel' : 'New Entry'}
+                        </button>
+                    </div>
                 </div>
             </header>
+
+            {/* Monthly Summary Card */}
+            {!loading && allExpenses.length > 0 && (
+                <MonthlySummaryCard expenses={allExpenses} />
+            )}
 
             {/* FAB for Mobile */}
             <div className="fab-container">
                 <button
                     className="fab-btn"
                     onClick={() => { playClickHaptic(); setShowForm(!showForm); }}
-                    style={{ transform: showForm ? 'rotate(45deg)' : 'rotate(0)' }}
+                    style={{
+                        transform: showForm ? 'rotate(45deg)' : 'rotate(0)',
+                        transition: 'transform var(--transition-bounce)'
+                    }}
                 >
                     <Plus size={28} />
                 </button>
@@ -170,54 +502,116 @@ const ExpensesPage: React.FC = () => {
 
             {/* Entry Form */}
             {showForm && (
-                <div className="card" style={{ marginBottom: '2rem', animation: 'fadeIn 0.2s ease-out', width: '100%' }}>
-                    <h2 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        New Expense
-                        <button onClick={() => setShowForm(false)} style={{ color: 'var(--text-secondary)' }}><X size={20} /></button>
-                    </h2>
+                <div className="animate-scale-in" style={{
+                    marginBottom: '2rem',
+                    width: '100%',
+                    background: 'var(--bg-card)',
+                    borderRadius: 'var(--radius-xl)',
+                    padding: '1.25rem',
+                    boxShadow: 'var(--shadow-card)',
+                    border: '1px solid var(--border-light)'
+                }}>
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '1.25rem',
+                        paddingBottom: '0.875rem',
+                        borderBottom: '1px solid var(--border-light)'
+                    }}>
+                        <h2 style={{
+                            fontSize: 'var(--text-base)',
+                            fontWeight: 600,
+                            color: 'var(--text-main)'
+                        }}>
+                            New Expense
+                        </h2>
+                        <button
+                            onClick={() => setShowForm(false)}
+                            style={{
+                                background: 'var(--bg-subtle)',
+                                border: 'none',
+                                borderRadius: 'var(--radius-md)',
+                                width: '32px',
+                                height: '32px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                color: 'var(--text-secondary)',
+                                transition: 'all var(--transition-fast)'
+                            }}
+                        >
+                            <X size={18} />
+                        </button>
+                    </div>
 
                     <form onSubmit={handleSave}>
-                        {/* Category Selection */}
-                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-                            {CATEGORIES.map(cat => (
-                                <button
-                                    key={cat.id}
-                                    type="button"
-                                    onClick={() => { playClickHaptic(); setCategory(cat.id); }}
-                                    style={{
-                                        display: 'flex', alignItems: 'center', gap: '6px',
-                                        padding: '0.4rem 0.8rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 500,
-                                        border: category === cat.id ? `2px solid ${cat.textColor}` : '1px solid var(--border-light)',
-                                        backgroundColor: category === cat.id ? 'white' : 'var(--bg-main)',
-                                        color: category === cat.id ? cat.textColor : 'var(--text-secondary)',
-                                    }}
-                                >
-                                    <cat.icon size={14} />
-                                    {cat.label}
-                                </button>
-                            ))}
-                        </div>
+                        {/* 2x3 Category Grid Selection */}
+                        <CategoryGridSelector
+                            selected={category}
+                            onSelect={setCategory}
+                        />
 
                         {/* Amount & Machine */}
-                        <div className="grid-responsive grid-2" style={{ gap: '0.75rem', marginBottom: '0.75rem' }}>
-                            <div className="input-group" style={{ marginBottom: 0 }}>
-                                <label className="label" style={{ fontSize: '0.75rem' }}>Amount</label>
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(2, 1fr)',
+                            gap: '0.75rem',
+                            marginBottom: '0.75rem'
+                        }}>
+                            <div>
+                                <label style={{
+                                    display: 'block',
+                                    fontSize: 'var(--text-xs)',
+                                    fontWeight: 500,
+                                    color: 'var(--text-muted)',
+                                    marginBottom: '0.375rem'
+                                }}>
+                                    Amount
+                                </label>
                                 <input
                                     type="number"
                                     value={amount}
                                     onChange={(e) => setAmount(e.target.value)}
                                     placeholder="0"
-                                    className="input input-compact"
-                                    style={{ fontSize: '1.1rem', fontWeight: 700 }}
                                     autoFocus
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.75rem 0.875rem',
+                                        fontSize: '1.25rem',
+                                        fontWeight: 700,
+                                        border: '2px solid var(--border-light)',
+                                        borderRadius: 'var(--radius-lg)',
+                                        background: 'var(--bg-subtle)',
+                                        color: 'var(--text-main)',
+                                        transition: 'all var(--transition-fast)'
+                                    }}
                                 />
                             </div>
-                            <div className="input-group" style={{ marginBottom: 0 }}>
-                                <label className="label" style={{ fontSize: '0.75rem' }}>Machine (Optional)</label>
+                            <div>
+                                <label style={{
+                                    display: 'block',
+                                    fontSize: 'var(--text-xs)',
+                                    fontWeight: 500,
+                                    color: 'var(--text-muted)',
+                                    marginBottom: '0.375rem'
+                                }}>
+                                    Machine (Optional)
+                                </label>
                                 <select
-                                    className="input input-compact"
                                     value={selectedMachine}
                                     onChange={(e) => setSelectedMachine(e.target.value)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.75rem 0.875rem',
+                                        fontSize: 'var(--text-sm)',
+                                        border: '1px solid var(--border-light)',
+                                        borderRadius: 'var(--radius-lg)',
+                                        background: 'var(--bg-subtle)',
+                                        color: 'var(--text-main)',
+                                        cursor: 'pointer'
+                                    }}
                                 >
                                     <option value="">General / All</option>
                                     {machines.map(m => (
@@ -228,71 +622,200 @@ const ExpensesPage: React.FC = () => {
                         </div>
 
                         {/* Date & Note */}
-                        <div className="grid-responsive grid-2" style={{ gap: '0.75rem', marginBottom: '1rem' }}>
-                            <div className="input-group" style={{ marginBottom: 0 }}>
-                                <label className="label" style={{ fontSize: '0.75rem' }}>Date</label>
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(2, 1fr)',
+                            gap: '0.75rem',
+                            marginBottom: '1.25rem'
+                        }}>
+                            <div>
+                                <label style={{
+                                    display: 'block',
+                                    fontSize: 'var(--text-xs)',
+                                    fontWeight: 500,
+                                    color: 'var(--text-muted)',
+                                    marginBottom: '0.375rem'
+                                }}>
+                                    Date
+                                </label>
                                 <input
                                     type="date"
-                                    className="input input-compact"
                                     value={date}
                                     onChange={(e) => setDate(e.target.value)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.625rem 0.875rem',
+                                        fontSize: 'var(--text-sm)',
+                                        border: '1px solid var(--border-light)',
+                                        borderRadius: 'var(--radius-lg)',
+                                        background: 'var(--bg-subtle)',
+                                        color: 'var(--text-main)'
+                                    }}
                                 />
                             </div>
-                            <div className="input-group" style={{ marginBottom: 0 }}>
-                                <label className="label" style={{ fontSize: '0.75rem' }}>Note</label>
+                            <div>
+                                <label style={{
+                                    display: 'block',
+                                    fontSize: 'var(--text-xs)',
+                                    fontWeight: 500,
+                                    color: 'var(--text-muted)',
+                                    marginBottom: '0.375rem'
+                                }}>
+                                    Note
+                                </label>
                                 <input
                                     type="text"
-                                    className="input input-compact"
                                     placeholder="Description"
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.625rem 0.875rem',
+                                        fontSize: 'var(--text-sm)',
+                                        border: '1px solid var(--border-light)',
+                                        borderRadius: 'var(--radius-lg)',
+                                        background: 'var(--bg-subtle)',
+                                        color: 'var(--text-main)'
+                                    }}
                                 />
                             </div>
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border-light)' }}>
-                            <button type="button" onClick={() => setShowForm(false)} className="btn btn-secondary btn-sm" style={{ border: 'none' }}>Cancel</button>
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            gap: '0.75rem',
+                            paddingTop: '0.875rem',
+                            borderTop: '1px solid var(--border-light)'
+                        }}>
+                            <button
+                                type="button"
+                                onClick={() => setShowForm(false)}
+                                style={{
+                                    padding: '0.625rem 1.25rem',
+                                    fontSize: 'var(--text-sm)',
+                                    fontWeight: 500,
+                                    background: 'var(--bg-subtle)',
+                                    color: 'var(--text-secondary)',
+                                    border: 'none',
+                                    borderRadius: 'var(--radius-md)',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Cancel
+                            </button>
                             <button
                                 type="submit"
-                                className="btn btn-primary btn-sm"
-                                style={{ padding: '0.5rem 2rem', fontSize: '0.9rem' }}
                                 disabled={isSaving || !amount}
+                                style={{
+                                    padding: '0.625rem 1.5rem',
+                                    fontSize: 'var(--text-sm)',
+                                    fontWeight: 600,
+                                    background: !amount ? 'var(--bg-subtle)' : 'linear-gradient(135deg, var(--error), #DC2626)',
+                                    color: !amount ? 'var(--text-muted)' : 'white',
+                                    border: 'none',
+                                    borderRadius: 'var(--radius-md)',
+                                    cursor: !amount ? 'not-allowed' : 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    transition: 'all var(--transition-fast)',
+                                    boxShadow: amount ? '0 4px 12px rgba(239, 68, 68, 0.3)' : 'none'
+                                }}
                             >
-                                {isSaving ? <Loader2 className="animate-spin" size={16} /> : 'Save Expense'}
+                                {isSaving ? <Loader2 className="animate-spin" size={16} /> : <Receipt size={16} />}
+                                Save Expense
                             </button>
                         </div>
                     </form>
                 </div>
             )}
 
-            {/* Expenses List */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', gap: '1rem' }}>
-                <h3 style={{ margin: 0, fontSize: '1.1rem', whiteSpace: 'nowrap' }}>Recent History</h3>
+            {/* Expenses List Header */}
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '1rem'
+            }}>
+                <h3 style={{
+                    margin: 0,
+                    fontSize: 'var(--text-base)',
+                    fontWeight: 600,
+                    color: 'var(--text-main)'
+                }}>
+                    Recent History
+                </h3>
                 <button
-                    className="btn btn-secondary"
                     onClick={() => { playClickHaptic(); setShowHistory(true); }}
-                    style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', height: 'auto', whiteSpace: 'nowrap' }}
+                    style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--primary)',
+                        fontSize: 'var(--text-sm)',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.25rem'
+                    }}
                 >
-                    View All
+                    View all <ChevronRight size={16} />
                 </button>
             </div>
 
+            {/* Expenses List */}
             {loading ? (
-                <div style={{ display: 'grid', gap: '1rem', width: '100%' }}>
+                <div style={{ display: 'grid', gap: '0.75rem', width: '100%' }}>
                     {Array(3).fill(0).map((_, i) => (
-                        <div key={i} className="card" style={{ padding: '1rem', display: 'flex', gap: '1rem', alignItems: 'center', width: '100%' }}>
-                            <Skeleton width={40} height={40} borderRadius={10} />
+                        <div key={i} style={{
+                            background: 'var(--bg-card)',
+                            borderRadius: 'var(--radius-xl)',
+                            padding: '1rem 1.25rem',
+                            display: 'flex',
+                            gap: '1rem',
+                            alignItems: 'center',
+                            border: '1px solid var(--border-light)'
+                        }}>
+                            <Skeleton width={48} height={48} borderRadius={12} />
                             <div style={{ flex: 1 }}>
-                                <Skeleton width="40%" height={16} style={{ marginBottom: '4px' }} />
-                                <Skeleton width="30%" height={12} />
+                                <Skeleton width="40%" height={16} style={{ marginBottom: '6px' }} />
+                                <Skeleton width="60%" height={12} />
                             </div>
-                            <Skeleton width={60} height={20} />
+                            <Skeleton width={70} height={20} />
                         </div>
                     ))}
                 </div>
             ) : recentExpenses.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
-                    <p>No expenses recorded yet.</p>
+                <div style={{
+                    padding: '3rem',
+                    textAlign: 'center',
+                    background: 'var(--bg-card)',
+                    borderRadius: 'var(--radius-xl)',
+                    border: '1px solid var(--border-light)'
+                }}>
+                    <div style={{
+                        marginBottom: '1rem',
+                        display: 'inline-flex',
+                        padding: '1.25rem',
+                        background: 'var(--error-light)',
+                        borderRadius: 'var(--radius-full)'
+                    }}>
+                        <Receipt size={32} style={{ color: 'var(--error)' }} />
+                    </div>
+                    <p style={{
+                        color: 'var(--text-muted)',
+                        fontSize: 'var(--text-sm)',
+                        marginBottom: '0.5rem'
+                    }}>
+                        No expenses recorded yet
+                    </p>
+                    <p style={{
+                        color: 'var(--text-secondary)',
+                        fontSize: 'var(--text-xs)'
+                    }}>
+                        Tap the + button to add your first expense
+                    </p>
                 </div>
             ) : (
                 <div style={{ display: 'grid', gap: '0.75rem', width: '100%' }}>
@@ -301,55 +824,142 @@ const ExpensesPage: React.FC = () => {
                         const Icon = CategoryData.icon;
 
                         return (
-                            <div key={expense.id} className="card" style={{ padding: '1rem', display: 'flex', alignItems: 'flex-start', gap: '1rem', width: '100%' }}>
+                            <div key={expense.id} style={{
+                                background: 'var(--bg-card)',
+                                borderRadius: 'var(--radius-xl)',
+                                padding: '1rem',
+                                display: 'grid',
+                                gridTemplateColumns: '48px 1fr auto',
+                                alignItems: 'center',
+                                gap: '0.875rem',
+                                boxShadow: 'var(--shadow-xs)',
+                                border: '1px solid var(--border-light)',
+                                transition: 'all var(--transition-fast)'
+                            }}>
+                                {/* Category Icon - 48x48 for larger touch target */}
                                 <div style={{
-                                    width: '40px', height: '40px',
-                                    borderRadius: '10px',
+                                    width: '48px',
+                                    height: '48px',
+                                    borderRadius: 'var(--radius-lg)',
                                     backgroundColor: CategoryData.color,
                                     color: CategoryData.textColor,
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
                                     flexShrink: 0
                                 }}>
-                                    <Icon size={20} />
+                                    <Icon size={22} />
                                 </div>
 
-                                <div style={{ flex: 1 }}>
-                                    <h4 style={{ fontSize: '1rem', fontWeight: 600, color: '#1F2937', marginBottom: '2px' }}>{expense.category}</h4>
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                        <span>{new Date(expense.date).toLocaleDateString()}</span>
+                                {/* Content */}
+                                <div style={{ minWidth: 0 }}>
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        marginBottom: '0.25rem'
+                                    }}>
+                                        <h4 style={{
+                                            fontSize: 'var(--text-sm)',
+                                            fontWeight: 600,
+                                            color: 'var(--text-main)',
+                                            margin: 0
+                                        }}>
+                                            {CategoryData.shortLabel}
+                                        </h4>
                                         {expense.machines?.name && (
+                                            <span style={{
+                                                background: 'var(--secondary-light)',
+                                                color: 'var(--secondary)',
+                                                padding: '0.125rem 0.5rem',
+                                                borderRadius: 'var(--radius-sm)',
+                                                fontSize: '0.65rem',
+                                                fontWeight: 600
+                                            }}>
+                                                {expense.machines.name}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        fontSize: 'var(--text-xs)',
+                                        color: 'var(--text-muted)'
+                                    }}>
+                                        <span>
+                                            {new Date(expense.date).toLocaleDateString('en-IN', {
+                                                day: 'numeric',
+                                                month: 'short'
+                                            })}
+                                        </span>
+                                        {expense.description && (
                                             <>
                                                 <span>•</span>
                                                 <span style={{
-                                                    background: '#EFF6FF', color: '#1E40AF', padding: '1px 6px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap',
+                                                    maxWidth: '120px'
                                                 }}>
-                                                    {expense.machines.name}
+                                                    {expense.description}
                                                 </span>
-                                            </>
-                                        )}
-                                        {expense.description && (
-                                            <>
-                                                <span className="hide-on-mobile">•</span>
-                                                <span style={{ fontStyle: 'italic' }}>{expense.description}</span>
                                             </>
                                         )}
                                     </div>
                                 </div>
 
-                                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
-                                    <div style={{ fontSize: '1rem', fontWeight: 700, color: '#DC2626' }}>
-                                        - ₹{expense.amount.toLocaleString()}
+                                {/* Amount & Actions */}
+                                <div style={{
+                                    textAlign: 'right',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'flex-end',
+                                    gap: '0.375rem'
+                                }}>
+                                    <div style={{
+                                        fontSize: 'var(--text-base)',
+                                        fontWeight: 700,
+                                        color: 'var(--error)'
+                                    }}>
+                                        -₹{expense.amount.toLocaleString('en-IN')}
                                     </div>
-                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <div style={{ display: 'flex', gap: '0.375rem' }}>
                                         <button
                                             onClick={() => { playClickHaptic(); setEditExpense(expense); }}
-                                            style={{ padding: '4px', background: '#EFF6FF', color: '#3B82F6', borderRadius: '4px', border: 'none' }}
+                                            style={{
+                                                padding: '0.375rem',
+                                                width: '32px',
+                                                height: '32px',
+                                                background: 'var(--info-light)',
+                                                color: 'var(--info)',
+                                                borderRadius: 'var(--radius-md)',
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                transition: 'all var(--transition-fast)'
+                                            }}
                                         >
                                             <Edit size={14} />
                                         </button>
                                         <button
                                             onClick={() => handleDelete(expense.id)}
-                                            style={{ padding: '4px', background: '#FEF2F2', color: '#EF4444', borderRadius: '4px', border: 'none' }}
+                                            style={{
+                                                padding: '0.375rem',
+                                                width: '32px',
+                                                height: '32px',
+                                                background: 'var(--error-light)',
+                                                color: 'var(--error)',
+                                                borderRadius: 'var(--radius-md)',
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                transition: 'all var(--transition-fast)'
+                                            }}
                                         >
                                             <Trash2 size={14} />
                                         </button>
@@ -388,4 +998,3 @@ const ExpensesPage: React.FC = () => {
 };
 
 export default ExpensesPage;
-

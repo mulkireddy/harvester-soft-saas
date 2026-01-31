@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TrendingUp, TrendingDown, Wallet, AlertCircle, ArrowUpRight, ArrowDownRight, Sprout } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownRight, Sprout, ChevronRight, Calendar, Wheat, Clock, DollarSign } from 'lucide-react';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { supabase } from '../lib/supabase';
 import VillageLeaderboard from '../components/features/analytics/VillageLeaderboard';
+import { playClickHaptic } from '../lib/ui-utils';
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
@@ -15,17 +16,48 @@ const Dashboard: React.FC = () => {
         pendingDues: 0,
         netProfit: 0,
     });
+    const [trends, setTrends] = useState({
+        revenueChange: 0,
+        profitChange: 0,
+    });
+    const [todaySummary, setTodaySummary] = useState({
+        acres: 0,
+        jobs: 0,
+        earnings: 0
+    });
     const [recentActivity, setRecentActivity] = useState<any[]>([]);
     const [rawJobs, setRawJobs] = useState<any[]>([]);
     const [cropStats, setCropStats] = useState<any[]>([]);
+    const [greeting, setGreeting] = useState('Good morning');
+    const [userName, setUserName] = useState('');
 
     useEffect(() => {
+        // Set greeting based on time
+        const hour = new Date().getHours();
+        if (hour < 12) setGreeting('Good morning');
+        else if (hour < 17) setGreeting('Good afternoon');
+        else setGreeting('Good evening');
+
+        fetchUserName();
         fetchDashboardData();
     }, []);
+
+    const fetchUserName = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.user_metadata?.name) {
+            setUserName(user.user_metadata.name.split(' ')[0]);
+        }
+    };
 
     const fetchDashboardData = async () => {
         setLoading(true);
         try {
+            const now = new Date();
+            const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+            const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+            const today = new Date().toISOString().split('T')[0];
+
             // 1. Fetch Data
             const { data: jobs, error: jobsError } = await supabase
                 .from('jobs')
@@ -40,12 +72,17 @@ const Dashboard: React.FC = () => {
             if (expensesError) throw expensesError;
 
             // 2. Calculate Totals
-            const sum = (arr: any[], key: string) => arr.reduce((acc, item) => acc + (item[key] || 0), 0);
+            const sum = (arr: any[], key: string) => arr.reduce((acc, item) => acc + (Number(item[key]) || 0), 0);
 
             const totalRevenue = sum(jobs || [], 'total_amount');
             const totalCollected = sum(jobs || [], 'paid_amount');
             const totalExpenses = sum(expenses || [], 'amount');
+
+            // Pending Dues = Total Deal Value - Total Collected Amount
             const pendingDues = totalRevenue - totalCollected;
+
+            // Net Profit = Total Money In (Collected) - Total Money Out (Expenses)
+            // Note: We do NOT count pending dues as profit yet, as it's not "realized" cash.
             const netProfit = totalCollected - totalExpenses;
 
             setStats({
@@ -55,7 +92,57 @@ const Dashboard: React.FC = () => {
                 netProfit,
             });
 
-            // 3. Process Lists
+            // 3. Calculate Trends (This Month vs Last Month)
+            // Helper to filter by date range
+            const filterByDate = (data: any[], start: Date, end?: Date) => {
+                return data?.filter(item => {
+                    const d = new Date(item.date);
+                    return d >= start && (!end || d <= end);
+                }) || [];
+            };
+
+            const thisMonthJobs = filterByDate(jobs || [], thisMonthStart);
+            const lastMonthJobs = filterByDate(jobs || [], lastMonthStart, lastMonthEnd);
+
+            // Revenue Trend (Based on Total Deal Value)
+            const thisMonthRevenue = sum(thisMonthJobs, 'total_amount');
+            const lastMonthRevenue = sum(lastMonthJobs, 'total_amount');
+
+            // Profit Trend (Realized Profit: Collected - Expenses)
+            const thisMonthCollected = sum(thisMonthJobs, 'paid_amount');
+            const lastMonthCollected = sum(lastMonthJobs, 'paid_amount');
+
+            const thisMonthExpenses = sum(filterByDate(expenses || [], thisMonthStart), 'amount');
+            const lastMonthExpenses = sum(filterByDate(expenses || [], lastMonthStart, lastMonthEnd), 'amount');
+
+            const thisMonthProfit = thisMonthCollected - thisMonthExpenses;
+            const lastMonthProfit = lastMonthCollected - lastMonthExpenses;
+
+            // Avoid division by zero
+            const calculateChange = (current: number, previous: number) => {
+                if (previous === 0) return current > 0 ? 100 : 0;
+                return Math.round(((current - previous) / Math.abs(previous)) * 100);
+            };
+
+            const revenueChange = calculateChange(thisMonthRevenue, lastMonthRevenue);
+            const profitChange = calculateChange(thisMonthProfit, lastMonthProfit);
+
+            setTrends({ revenueChange, profitChange });
+
+            // 4. Today's Summary
+            const todayJobs = jobs?.filter(j => j.date?.startsWith(today)) || [];
+            const todayAcres = todayJobs
+                .filter(j => j.billing_mode === 'acre')
+                .reduce((sum, j) => sum + Number(j.quantity || 0), 0);
+            const todayEarnings = sum(todayJobs, 'total_amount');
+
+            setTodaySummary({
+                acres: todayAcres,
+                jobs: todayJobs.length,
+                earnings: todayEarnings
+            });
+
+            // 5. Process Lists
             setRawJobs(jobs || []);
 
             // Recent Activity
@@ -83,7 +170,7 @@ const Dashboard: React.FC = () => {
 
             setRecentActivity(mixed);
 
-            // 4. Crop Stats (Acres Only)
+            // 6. Crop Stats (Acres Only)
             const crops: Record<string, number> = {};
             jobs?.forEach(job => {
                 if (job.billing_mode === 'acre' && job.crop) {
@@ -107,198 +194,607 @@ const Dashboard: React.FC = () => {
         }
     };
 
-    // Loading skeleton logic is handled inline now
-    // if (loading) { ... } removed
+    // Format currency
+    const formatCurrency = (value: number) => {
+        if (value >= 100000) return `₹${(value / 100000).toFixed(1)}L`;
+        if (value >= 1000) return `₹${(value / 1000).toFixed(1)}k`;
+        return `₹${value.toFixed(0)}`;
+    };
+
+    // Trend indicator component
+    const TrendIndicator: React.FC<{ value: number }> = ({ value }) => {
+        if (value === 0) return null;
+        const isPositive = value > 0;
+        return (
+            <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.125rem',
+                padding: '0.125rem 0.375rem',
+                borderRadius: 'var(--radius-sm)',
+                background: isPositive ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                color: isPositive ? '#059669' : '#DC2626',
+                fontSize: '0.65rem',
+                fontWeight: 700
+            }}>
+                {isPositive ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+                {isPositive ? '+' : ''}{value}%
+            </div>
+        );
+    };
 
     return (
-        <div>
-            <header style={{ marginBottom: '2rem' }}>
-                <h1 style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>Dashboard</h1>
-                <p style={{ color: 'var(--text-secondary)' }}>Business overview & performance.</p>
+        <div className="animate-fade-in">
+            {/* Header with Greeting and Date */}
+            <header style={{ marginBottom: '1.5rem' }}>
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    color: 'var(--text-muted)',
+                    fontSize: 'var(--text-sm)',
+                    marginBottom: '0.375rem'
+                }}>
+                    <Calendar size={14} />
+                    {new Date().toLocaleDateString('en-IN', {
+                        weekday: 'long',
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                    })}
+                </div>
+                <h1 style={{
+                    fontSize: 'var(--text-2xl)',
+                    fontWeight: 700,
+                    color: 'var(--text-main)',
+                    letterSpacing: '-0.02em'
+                }}>
+                    {greeting}{userName ? `, ${userName}` : ''} 👋
+                </h1>
             </header>
 
-            {/* Premium Stats Grid */}
-            <div className="stats-grid" style={{ marginBottom: '3rem', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                {/* Revenue - Pink Gradient (Airbnb Style) */}
-                <div
-                    onClick={() => navigate('/reports')}
-                    style={{
-                        padding: '1.5rem', borderRadius: '16px',
-                        background: 'linear-gradient(135deg, #FF385C 0%, #BD1E59 100%)',
-                        color: 'white',
-                        boxShadow: '0 8px 16px -4px rgba(255, 56, 92, 0.3)',
-                        cursor: 'pointer',
-                        transition: 'transform 0.1s',
-                        aspectRatio: '1/0.8',
-                        display: 'flex', flexDirection: 'column', justifyContent: 'center'
+            {/* Today's Summary Section */}
+            <div style={{
+                background: 'var(--bg-card)',
+                borderRadius: 'var(--radius-xl)',
+                padding: '1rem 1.25rem',
+                marginBottom: '1.25rem',
+                border: '1px solid var(--border-light)',
+                boxShadow: 'var(--shadow-xs)'
+            }}>
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    marginBottom: '0.75rem'
+                }}>
+                    <Clock size={14} style={{ color: 'var(--primary)' }} />
+                    <span style={{
+                        fontSize: 'var(--text-xs)',
+                        fontWeight: 600,
+                        color: 'var(--text-muted)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
                     }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', opacity: 0.9 }}>
-                        <div style={{ padding: '6px', background: 'rgba(255,255,255,0.2)', borderRadius: '8px' }}>
-                            <Wallet size={18} />
-                        </div>
-                        <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Revenue</span>
-                    </div>
-                    <h3 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, lineHeight: 1 }}>
-                        {loading ? <Skeleton width={80} height={28} baseColor="rgba(255,255,255,0.2)" highlightColor="rgba(255,255,255,0.4)" /> : `₹${(stats.totalRevenue / 1000).toFixed(1)}k`}
-                    </h3>
+                        Today's Progress
+                    </span>
                 </div>
-
-                {/* Expenses - Red Gradient */}
-                <div
-                    onClick={() => navigate('/expenses')}
-                    style={{
-                        padding: '1.5rem', borderRadius: '16px',
-                        background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
-                        color: 'white',
-                        boxShadow: '0 8px 16px -4px rgba(220, 38, 38, 0.3)',
-                        cursor: 'pointer',
-                        transition: 'transform 0.1s',
-                        aspectRatio: '1/0.8',
-                        display: 'flex', flexDirection: 'column', justifyContent: 'center'
-                    }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', opacity: 0.9 }}>
-                        <div style={{ padding: '6px', background: 'rgba(255,255,255,0.2)', borderRadius: '8px' }}>
-                            <TrendingDown size={18} />
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: '1rem'
+                }}>
+                    {[
+                        { label: 'Acres', value: todaySummary.acres.toFixed(1), icon: Wheat, color: 'var(--primary)' },
+                        { label: 'Jobs', value: todaySummary.jobs, icon: ChevronRight, color: 'var(--info)' },
+                        { label: 'Earned', value: formatCurrency(todaySummary.earnings), icon: DollarSign, color: 'var(--success)' }
+                    ].map((item, i) => (
+                        <div key={i} style={{ textAlign: 'center' }}>
+                            <div style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: 'var(--radius-md)',
+                                background: `${item.color}15`,
+                                marginBottom: '0.375rem'
+                            }}>
+                                <item.icon size={16} style={{ color: item.color }} />
+                            </div>
+                            <div style={{
+                                fontSize: 'var(--text-lg)',
+                                fontWeight: 700,
+                                color: 'var(--text-main)',
+                                lineHeight: 1.2
+                            }}>
+                                {loading ? <Skeleton width={40} /> : item.value}
+                            </div>
+                            <div style={{
+                                fontSize: '0.65rem',
+                                color: 'var(--text-muted)',
+                                fontWeight: 500
+                            }}>
+                                {item.label}
+                            </div>
                         </div>
-                        <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Expenses</span>
-                    </div>
-                    <h3 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, lineHeight: 1 }}>
-                        {loading ? <Skeleton width={80} height={28} baseColor="rgba(255,255,255,0.2)" highlightColor="rgba(255,255,255,0.4)" /> : `₹${(stats.totalExpenses / 1000).toFixed(1)}k`}
-                    </h3>
-                </div>
-
-                {/* Profit - Green Gradient */}
-                <div
-                    onClick={() => navigate('/reports')}
-                    style={{
-                        padding: '1.5rem', borderRadius: '16px',
-                        background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-                        color: 'white',
-                        boxShadow: '0 8px 16px -4px rgba(16, 185, 129, 0.3)',
-                        cursor: 'pointer',
-                        transition: 'transform 0.1s',
-                        aspectRatio: '1/0.8',
-                        display: 'flex', flexDirection: 'column', justifyContent: 'center'
-                    }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', opacity: 0.9 }}>
-                        <div style={{ padding: '6px', background: 'rgba(255,255,255,0.2)', borderRadius: '8px' }}>
-                            <TrendingUp size={18} />
-                        </div>
-                        <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Net Profit</span>
-                    </div>
-                    <h3 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, lineHeight: 1 }}>
-                        {loading ? <Skeleton width={80} height={28} baseColor="rgba(255,255,255,0.2)" highlightColor="rgba(255,255,255,0.4)" /> : `₹${(stats.netProfit / 1000).toFixed(1)}k`}
-                    </h3>
-                </div>
-
-                {/* Pending - Orange Gradient */}
-                <div
-                    onClick={() => navigate('/farmers')}
-                    style={{
-                        padding: '1.5rem', borderRadius: '16px',
-                        background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
-                        color: 'white',
-                        boxShadow: '0 8px 16px -4px rgba(245, 158, 11, 0.3)',
-                        cursor: 'pointer',
-                        transition: 'transform 0.1s',
-                        aspectRatio: '1/0.8',
-                        display: 'flex', flexDirection: 'column', justifyContent: 'center'
-                    }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', opacity: 0.9 }}>
-                        <div style={{ padding: '6px', background: 'rgba(255,255,255,0.2)', borderRadius: '8px' }}>
-                            <AlertCircle size={18} />
-                        </div>
-                        <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Pending</span>
-                    </div>
-                    <h3 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, lineHeight: 1 }}>
-                        {loading ? <Skeleton width={80} height={28} baseColor="rgba(255,255,255,0.2)" highlightColor="rgba(255,255,255,0.4)" /> : `₹${(stats.pendingDues / 1000).toFixed(1)}k`}
-                    </h3>
+                    ))}
                 </div>
             </div>
 
-            {/* Analytics Grid */}
-            <div className="grid-responsive grid-2" style={{ gap: '2rem', marginBottom: '3rem' }}>
-                {/* 1. Village Leaderboard */}
-                <div>
-                    {loading ? <Skeleton height={300} borderRadius={16} /> : <VillageLeaderboard jobs={rawJobs} />}
+            {/* Simplified 2-Card Hero: Revenue + Profit with Trends */}
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: '0.875rem',
+                marginBottom: '1.25rem'
+            }}>
+                {/* Revenue Card */}
+                <div
+                    onClick={() => { playClickHaptic(); navigate('/reports'); }}
+                    className="animate-scale-in card-lift"
+                    role="button"
+                    tabIndex={0}
+                    aria-label="View revenue reports"
+                    onKeyDown={(e) => e.key === 'Enter' && navigate('/reports')}
+                    style={{
+                        padding: '1.25rem',
+                        borderRadius: 'var(--radius-xl)',
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--border-light)',
+                        boxShadow: 'var(--shadow-card)',
+                        cursor: 'pointer',
+                        transition: 'all var(--transition-fast)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.875rem'
+                    }}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: 'var(--radius-lg)',
+                            background: 'rgba(5, 150, 105, 0.1)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}>
+                            <Wallet size={20} style={{ color: 'var(--primary)' }} />
+                        </div>
+                        <TrendIndicator value={trends.revenueChange} />
+                    </div>
+                    <div>
+                        <div style={{
+                            fontSize: 'var(--text-xs)',
+                            color: 'var(--text-muted)',
+                            fontWeight: 500,
+                            marginBottom: '0.25rem'
+                        }}>
+                            Total Revenue
+                        </div>
+                        <div style={{
+                            fontSize: '1.5rem',
+                            fontWeight: 700,
+                            color: 'var(--text-main)',
+                            letterSpacing: '-0.02em'
+                        }}>
+                            {loading ? <Skeleton width={80} /> : formatCurrency(stats.totalRevenue)}
+                        </div>
+                    </div>
                 </div>
 
-                {/* 2. Top Crops */}
-                <div className="card" style={{ padding: '1.5rem', height: '100%' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
-                        <div style={{ padding: '0.5rem', background: '#ECFCCB', borderRadius: '8px', color: '#65A30D' }}>
-                            <Sprout size={18} />
+                {/* Profit Card */}
+                <div
+                    onClick={() => { playClickHaptic(); navigate('/reports'); }}
+                    className="animate-scale-in card-lift"
+                    role="button"
+                    tabIndex={0}
+                    aria-label="View profit reports"
+                    onKeyDown={(e) => e.key === 'Enter' && navigate('/reports')}
+                    style={{
+                        padding: '1.25rem',
+                        borderRadius: 'var(--radius-xl)',
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--border-light)',
+                        boxShadow: 'var(--shadow-card)',
+                        cursor: 'pointer',
+                        transition: 'all var(--transition-fast)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.875rem',
+                        animationDelay: '50ms'
+                    }}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: 'var(--radius-lg)',
+                            background: 'rgba(59, 130, 246, 0.1)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}>
+                            <TrendingUp size={20} style={{ color: 'var(--info)' }} />
                         </div>
-                        <h3 style={{ fontSize: '1.1rem' }}>Top Crops (by Acres)</h3>
+                        <TrendIndicator value={trends.profitChange} />
+                    </div>
+                    <div>
+                        <div style={{
+                            fontSize: 'var(--text-xs)',
+                            color: 'var(--text-muted)',
+                            fontWeight: 500,
+                            marginBottom: '0.25rem'
+                        }}>
+                            Net Profit
+                        </div>
+                        <div style={{
+                            fontSize: '1.5rem',
+                            fontWeight: 700,
+                            color: stats.netProfit >= 0 ? 'var(--success)' : 'var(--error)',
+                            letterSpacing: '-0.02em'
+                        }}>
+                            {loading ? <Skeleton width={80} /> : formatCurrency(stats.netProfit)}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Secondary Stats Row: Expenses + Pending */}
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: '0.75rem',
+                marginBottom: '1.5rem'
+            }}>
+                {/* Expenses Mini Card */}
+                <div
+                    onClick={() => { playClickHaptic(); navigate('/expenses'); }}
+                    style={{
+                        padding: '0.875rem 1rem',
+                        borderRadius: 'var(--radius-lg)',
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--border-light)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        transition: 'all var(--transition-fast)'
+                    }}
+                >
+                    <div style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: 'var(--radius-md)',
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}>
+                        <TrendingDown size={18} style={{ color: 'var(--error)' }} />
+                    </div>
+                    <div>
+                        <div style={{
+                            fontSize: '0.65rem',
+                            color: 'var(--text-muted)',
+                            fontWeight: 500,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.03em'
+                        }}>
+                            Expenses
+                        </div>
+                        <div style={{
+                            fontSize: 'var(--text-base)',
+                            fontWeight: 700,
+                            color: 'var(--error)'
+                        }}>
+                            {loading ? <Skeleton width={60} /> : formatCurrency(stats.totalExpenses)}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Pending Mini Card */}
+                <div
+                    onClick={() => { playClickHaptic(); navigate('/farmers'); }}
+                    style={{
+                        padding: '0.875rem 1rem',
+                        borderRadius: 'var(--radius-lg)',
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--border-light)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        transition: 'all var(--transition-fast)'
+                    }}
+                >
+                    <div style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: 'var(--radius-md)',
+                        background: 'rgba(245, 158, 11, 0.1)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}>
+                        <Clock size={18} style={{ color: 'var(--warning)' }} />
+                    </div>
+                    <div>
+                        <div style={{
+                            fontSize: '0.65rem',
+                            color: 'var(--text-muted)',
+                            fontWeight: 500,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.03em'
+                        }}>
+                            Pending
+                        </div>
+                        <div style={{
+                            fontSize: 'var(--text-base)',
+                            fontWeight: 700,
+                            color: 'var(--warning)'
+                        }}>
+                            {loading ? <Skeleton width={60} /> : formatCurrency(stats.pendingDues)}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Analytics Section */}
+            <div style={{ marginBottom: '2rem' }}>
+                <div style={{
+                    display: 'grid',
+                    gap: '1rem',
+                    gridTemplateColumns: '1fr'
+                }}>
+                    {/* Village Leaderboard */}
+                    <div>
+                        {loading ? (
+                            <Skeleton height={280} borderRadius={16} />
+                        ) : (
+                            <VillageLeaderboard jobs={rawJobs} />
+                        )}
                     </div>
 
-                    <div style={{ display: 'grid', gap: '1rem' }}>
-                        {loading ? (
-                            Array(5).fill(0).map((_, i) => (
-                                <div key={i} style={{ paddingBottom: '0.75rem', borderBottom: '1px dashed var(--border-light)' }}>
-                                    <Skeleton height={20} width="80%" style={{ marginBottom: '6px' }} />
-                                    <Skeleton height={15} width="40%" />
+                    {/* Top Crops Card - Cleaner Styling */}
+                    <div style={{
+                        background: 'var(--bg-card)',
+                        borderRadius: 'var(--radius-xl)',
+                        padding: '1.25rem',
+                        boxShadow: 'var(--shadow-xs)',
+                        border: '1px solid var(--border-light)'
+                    }}>
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            marginBottom: '1.25rem'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <div style={{
+                                    padding: '0.5rem',
+                                    background: 'rgba(5, 150, 105, 0.1)',
+                                    borderRadius: 'var(--radius-md)',
+                                    color: 'var(--primary)'
+                                }}>
+                                    <Sprout size={18} />
                                 </div>
-                            ))
-                        ) : (
-                            cropStats.map((item, index) => (
-                                <div key={item.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '0.75rem', borderBottom: index < cropStats.length - 1 ? '1px dashed var(--border-light)' : 'none' }}>
-                                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                <h3 style={{
+                                    fontSize: 'var(--text-base)',
+                                    fontWeight: 600,
+                                    color: 'var(--text-main)'
+                                }}>
+                                    Top Crops
+                                </h3>
+                            </div>
+                            <span style={{
+                                fontSize: 'var(--text-xs)',
+                                color: 'var(--text-muted)',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em'
+                            }}>
+                                by acres
+                            </span>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            {loading ? (
+                                Array(4).fill(0).map((_, i) => (
+                                    <div key={i} style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.75rem',
+                                        paddingBottom: '0.75rem',
+                                        borderBottom: i < 3 ? '1px solid var(--border-light)' : 'none'
+                                    }}>
+                                        <Skeleton circle width={28} height={28} />
+                                        <Skeleton width={100} height={16} />
+                                        <div style={{ marginLeft: 'auto' }}>
+                                            <Skeleton width={50} height={16} />
+                                        </div>
+                                    </div>
+                                ))
+                            ) : cropStats.length > 0 ? (
+                                cropStats.map((item, index) => (
+                                    <div
+                                        key={item.name}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.75rem',
+                                            paddingBottom: index < cropStats.length - 1 ? '0.75rem' : 0,
+                                            borderBottom: index < cropStats.length - 1 ? '1px solid var(--border-light)' : 'none'
+                                        }}
+                                    >
                                         <div style={{
-                                            width: '24px', height: '24px', borderRadius: '50%',
-                                            background: index === 0 ? '#ECFCCB' : '#F3F4F6',
-                                            color: index === 0 ? '#65A30D' : 'var(--text-secondary)',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.8rem'
+                                            width: '28px',
+                                            height: '28px',
+                                            borderRadius: 'var(--radius-full)',
+                                            background: index === 0 ? 'var(--primary)' : 'var(--bg-subtle)',
+                                            color: index === 0 ? 'white' : 'var(--text-secondary)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontWeight: 700,
+                                            fontSize: 'var(--text-xs)'
                                         }}>
                                             {index + 1}
                                         </div>
-                                        <div style={{ fontWeight: 600 }}>{item.name}</div>
+                                        <span style={{
+                                            fontWeight: 500,
+                                            color: 'var(--text-main)',
+                                            flex: 1
+                                        }}>
+                                            {item.name}
+                                        </span>
+                                        <span style={{
+                                            fontWeight: 700,
+                                            color: 'var(--primary)',
+                                            fontSize: 'var(--text-sm)'
+                                        }}>
+                                            {item.acres.toFixed(1)}
+                                            <span style={{
+                                                fontWeight: 500,
+                                                color: 'var(--text-muted)',
+                                                marginLeft: '0.25rem'
+                                            }}>
+                                                ac
+                                            </span>
+                                        </span>
                                     </div>
-                                    <div style={{ fontWeight: 700, color: '#65A30D' }}>
-                                        {item.acres.toFixed(1)} <span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-secondary)' }}>ac</span>
-                                    </div>
+                                ))
+                            ) : (
+                                <div style={{
+                                    textAlign: 'center',
+                                    color: 'var(--text-muted)',
+                                    fontSize: 'var(--text-sm)',
+                                    padding: '1.5rem'
+                                }}>
+                                    No crop data yet
                                 </div>
-                            )))}
-                        {!loading && cropStats.length === 0 && <div style={{ color: 'var(--text-secondary)', textAlign: 'center', fontStyle: 'italic', fontSize: '0.9rem' }}>No crop data yet.</div>}
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* Recent Activity Section */}
+            {/* Recent Activity */}
             <div>
-                <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>Recent Activity</h3>
-                <div style={{ display: 'grid', gap: '1rem' }}>
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '1rem'
+                }}>
+                    <h3 style={{
+                        fontSize: 'var(--text-base)',
+                        fontWeight: 600,
+                        color: 'var(--text-main)'
+                    }}>
+                        Recent Activity
+                    </h3>
+                    <button
+                        onClick={() => { playClickHaptic(); navigate('/reports'); }}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--primary)',
+                            fontSize: 'var(--text-sm)',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.25rem'
+                        }}
+                    >
+                        View all <ChevronRight size={16} />
+                    </button>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     {loading ? (
-                        Array(3).fill(0).map((_, i) => <Skeleton key={i} height={80} borderRadius={12} />)
-                    ) : (
+                        Array(3).fill(0).map((_, i) => (
+                            <Skeleton key={i} height={72} borderRadius={14} />
+                        ))
+                    ) : recentActivity.length > 0 ? (
                         recentActivity.map((item, index) => (
-                            <div key={index} className="card" style={{ padding: '1rem 1.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                            <div
+                                key={index}
+                                style={{
+                                    background: 'var(--bg-card)',
+                                    borderRadius: 'var(--radius-lg)',
+                                    padding: '1rem 1.25rem',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    boxShadow: 'var(--shadow-xs)',
+                                    border: '1px solid var(--border-light)',
+                                    transition: 'all var(--transition-fast)'
+                                }}
+                            >
+                                <div style={{ display: 'flex', gap: '0.875rem', alignItems: 'center' }}>
                                     <div style={{
-                                        padding: '0.6rem',
-                                        borderRadius: '50%',
-                                        background: item.type === 'income' ? '#F0FDF4' : '#FEF2F2',
-                                        color: item.type === 'income' ? '#166534' : '#991B1B'
+                                        padding: '0.625rem',
+                                        borderRadius: 'var(--radius-lg)',
+                                        background: item.type === 'income'
+                                            ? 'rgba(16, 185, 129, 0.1)'
+                                            : 'rgba(239, 68, 68, 0.1)',
+                                        color: item.type === 'income' ? 'var(--success)' : 'var(--error)'
                                     }}>
-                                        {item.type === 'income' ? <ArrowDownRight size={20} /> : <ArrowUpRight size={20} />}
+                                        {item.type === 'income' ? <ArrowDownRight size={18} /> : <ArrowUpRight size={18} />}
                                     </div>
                                     <div>
-                                        <div style={{ fontWeight: 600, color: '#1F2937' }}>{item.title}</div>
-                                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{new Date(item.date).toLocaleDateString()}</div>
+                                        <div style={{
+                                            fontWeight: 600,
+                                            color: 'var(--text-main)',
+                                            fontSize: 'var(--text-sm)',
+                                            marginBottom: '0.125rem'
+                                        }}>
+                                            {item.title}
+                                        </div>
+                                        <div style={{
+                                            fontSize: 'var(--text-xs)',
+                                            color: 'var(--text-muted)'
+                                        }}>
+                                            {new Date(item.date).toLocaleDateString('en-IN', {
+                                                day: 'numeric',
+                                                month: 'short'
+                                            })}
+                                        </div>
                                     </div>
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
-                                    <div style={{ fontWeight: 700, fontSize: '1.1rem', color: item.type === 'income' ? '#166534' : '#DC2626' }}>
-                                        {item.type === 'income' ? '+' : '-'} ₹ {item.amount.toLocaleString()}
+                                    <div style={{
+                                        fontWeight: 700,
+                                        fontSize: 'var(--text-base)',
+                                        color: item.type === 'income' ? 'var(--success)' : 'var(--error)'
+                                    }}>
+                                        {item.type === 'income' ? '+' : '-'} ₹{item.amount.toLocaleString('en-IN')}
                                     </div>
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.5px' }}>
+                                    <div style={{
+                                        fontSize: '0.65rem',
+                                        color: 'var(--text-muted)',
+                                        textTransform: 'uppercase',
+                                        fontWeight: 600,
+                                        letterSpacing: '0.05em'
+                                    }}>
                                         {item.status}
                                     </div>
                                 </div>
                             </div>
-                        )))}
-                    {!loading && recentActivity.length === 0 && (
-                        <div className="card" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>No recent activity.</div>
+                        ))
+                    ) : (
+                        <div style={{
+                            background: 'var(--bg-card)',
+                            borderRadius: 'var(--radius-lg)',
+                            padding: '2.5rem',
+                            textAlign: 'center',
+                            color: 'var(--text-muted)',
+                            border: '1px solid var(--border-light)'
+                        }}>
+                            <p>No recent activity</p>
+                        </div>
                     )}
                 </div>
             </div>
