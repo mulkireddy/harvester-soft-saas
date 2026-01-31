@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import {
     Plus, Trash2, Truck, IndianRupee, Palette, Check, Loader2,
-    ChevronDown, ChevronUp, Edit2, X
+    ChevronDown, ChevronUp, User, Lock, Edit2, X, Phone, LogOut
 } from 'lucide-react';
 import ThemeToggle from '../components/common/ThemeToggle';
 import { playClickHaptic, playSuccessHaptic } from '../lib/ui-utils';
@@ -269,13 +269,224 @@ const EditMachineModal: React.FC<{
     );
 };
 
+// PIN Change Modal
+const PinChangeModal: React.FC<{
+    onClose: () => void;
+    onSave: (oldPin: string, newPin: string) => void;
+}> = ({ onClose, onSave }) => {
+    const [currentPin, setCurrentPin] = useState('');
+    const [newPin, setNewPin] = useState('');
+    const [confirmPin, setConfirmPin] = useState('');
+    const [error, setError] = useState('');
 
+    const handleSave = () => {
+        if (newPin !== confirmPin) {
+            setError('New PINs do not match');
+            return;
+        }
+        if (newPin.length < 4) {
+            setError('PIN must be at least 4 digits');
+            return;
+        }
+        onSave(currentPin, newPin);
+        onClose();
+    };
+
+    return (
+        <div style={{
+            position: 'fixed',
+            top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '1rem'
+        }}>
+            <div className="animate-scale-in" style={{
+                background: 'var(--bg-card)',
+                borderRadius: 'var(--radius-xl)',
+                padding: '1.5rem',
+                width: '100%',
+                maxWidth: '400px',
+                boxShadow: 'var(--shadow-lg)'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                    <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-main)' }}>
+                        Change PIN
+                    </h3>
+                    <button onClick={onClose} style={{
+                        padding: '0.5rem',
+                        background: 'var(--bg-subtle)',
+                        border: 'none',
+                        borderRadius: 'var(--radius-md)',
+                        cursor: 'pointer',
+                        display: 'flex'
+                    }}>
+                        <X size={18} style={{ color: 'var(--text-muted)' }} />
+                    </button>
+                </div>
+
+                <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                    <div>
+                        <label style={{
+                            display: 'block',
+                            fontSize: 'var(--text-xs)',
+                            fontWeight: 500,
+                            color: 'var(--text-muted)',
+                            marginBottom: '0.375rem'
+                        }}>
+                            Current PIN
+                        </label>
+                        <input
+                            type="password"
+                            inputMode="numeric"
+                            maxLength={6}
+                            value={currentPin}
+                            onChange={e => setCurrentPin(e.target.value.replace(/\D/g, ''))}
+                            style={{
+                                width: '100%',
+                                padding: '0.75rem',
+                                fontSize: 'var(--text-lg)',
+                                fontWeight: 700,
+                                letterSpacing: '0.5rem',
+                                textAlign: 'center',
+                                border: '1px solid var(--border-light)',
+                                borderRadius: 'var(--radius-md)',
+                                background: 'var(--bg-subtle)',
+                                color: 'var(--text-main)'
+                            }}
+                        />
+                    </div>
+                    <div>
+                        <label style={{
+                            display: 'block',
+                            fontSize: 'var(--text-xs)',
+                            fontWeight: 500,
+                            color: 'var(--text-muted)',
+                            marginBottom: '0.375rem'
+                        }}>
+                            New PIN
+                        </label>
+                        <input
+                            type="password"
+                            inputMode="numeric"
+                            maxLength={6}
+                            value={newPin}
+                            onChange={e => setNewPin(e.target.value.replace(/\D/g, ''))}
+                            style={{
+                                width: '100%',
+                                padding: '0.75rem',
+                                fontSize: 'var(--text-lg)',
+                                fontWeight: 700,
+                                letterSpacing: '0.5rem',
+                                textAlign: 'center',
+                                border: '1px solid var(--border-light)',
+                                borderRadius: 'var(--radius-md)',
+                                background: 'var(--bg-subtle)',
+                                color: 'var(--text-main)'
+                            }}
+                        />
+                    </div>
+                    <div>
+                        <label style={{
+                            display: 'block',
+                            fontSize: 'var(--text-xs)',
+                            fontWeight: 500,
+                            color: 'var(--text-muted)',
+                            marginBottom: '0.375rem'
+                        }}>
+                            Confirm New PIN
+                        </label>
+                        <input
+                            type="password"
+                            inputMode="numeric"
+                            maxLength={6}
+                            value={confirmPin}
+                            onChange={e => setConfirmPin(e.target.value.replace(/\D/g, ''))}
+                            style={{
+                                width: '100%',
+                                padding: '0.75rem',
+                                fontSize: 'var(--text-lg)',
+                                fontWeight: 700,
+                                letterSpacing: '0.5rem',
+                                textAlign: 'center',
+                                border: '1px solid var(--border-light)',
+                                borderRadius: 'var(--radius-md)',
+                                background: 'var(--bg-subtle)',
+                                color: 'var(--text-main)'
+                            }}
+                        />
+                    </div>
+                </div>
+
+                {error && (
+                    <div style={{
+                        padding: '0.75rem',
+                        background: 'var(--error-light)',
+                        color: 'var(--error)',
+                        borderRadius: 'var(--radius-md)',
+                        fontSize: 'var(--text-xs)',
+                        fontWeight: 500,
+                        marginBottom: '1rem'
+                    }}>
+                        {error}
+                    </div>
+                )}
+
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <button
+                        onClick={onClose}
+                        style={{
+                            flex: 1,
+                            padding: '0.75rem',
+                            fontSize: 'var(--text-sm)',
+                            fontWeight: 600,
+                            background: 'var(--bg-subtle)',
+                            color: 'var(--text-muted)',
+                            border: '1px solid var(--border-light)',
+                            borderRadius: 'var(--radius-md)',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={handleSave}
+                        disabled={!currentPin || !newPin || !confirmPin}
+                        style={{
+                            flex: 1,
+                            padding: '0.75rem',
+                            fontSize: 'var(--text-sm)',
+                            fontWeight: 600,
+                            background: 'var(--primary)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: 'var(--radius-md)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.5rem'
+                        }}
+                    >
+                        <Lock size={16} />
+                        Update PIN
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const SettingsPage: React.FC = () => {
     const [machines, setMachines] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [editingMachine, setEditingMachine] = useState<any>(null);
-    // Removed showPinModal and userProfile state
+    const [showPinModal, setShowPinModal] = useState(false);
+
+    // User Profile State
+    const [userProfile, setUserProfile] = useState<any>(null);
 
     // New Machine State
     const [newMachineName, setNewMachineName] = useState('');
@@ -298,8 +509,32 @@ const SettingsPage: React.FC = () => {
         const savedContrast = localStorage.getItem('high_contrast') === 'true';
         setHighContrast(savedContrast);
 
+        fetchUserProfile();
         fetchMachines();
     }, []);
+
+    // Sync High Contrast
+    useEffect(() => {
+        if (highContrast) {
+            document.body.classList.add('high-contrast');
+            localStorage.setItem('high_contrast', 'true');
+        } else {
+            document.body.classList.remove('high-contrast');
+            localStorage.setItem('high_contrast', 'false');
+        }
+    }, [highContrast]);
+
+    const fetchUserProfile = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const { data } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+            setUserProfile(data);
+        }
+    };
 
     const fetchMachines = async () => {
         const { data, error } = await supabase
@@ -381,7 +616,45 @@ const SettingsPage: React.FC = () => {
         }
     };
 
+    const handleUpdatePin = async (oldPin: string, newPin: string) => {
+        playClickHaptic();
+        try {
+            // Verify old PIN
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
 
+            const { data: userData } = await supabase
+                .from('users')
+                .select('pin')
+                .eq('id', user.id)
+                .single();
+
+            if (userData?.pin !== oldPin) {
+                toast.error('Current PIN is incorrect');
+                return;
+            }
+
+            // Update PIN
+            const { error } = await supabase
+                .from('users')
+                .update({ pin: newPin })
+                .eq('id', user.id);
+
+            if (error) throw error;
+            playSuccessHaptic();
+            toast.success('PIN updated successfully!');
+        } catch (error) {
+            console.error('Error updating PIN:', error);
+            toast.error('Failed to update PIN');
+        }
+    };
+
+    const handleLogout = async () => {
+        if (!confirm('Are you sure you want to log out?')) return;
+        playClickHaptic();
+        await supabase.auth.signOut();
+        window.location.reload();
+    };
 
     return (
         <div className="animate-fade-in" style={{ maxWidth: '800px', margin: '0 auto' }}>
@@ -404,7 +677,146 @@ const SettingsPage: React.FC = () => {
                 </p>
             </header>
 
-            {/* Appearance Section */}
+            {/* User Profile Section */}
+            <CollapsibleSection
+                title="Profile"
+                subtitle="Your account information"
+                icon={<User size={22} />}
+                iconBg="var(--info-light)"
+                iconColor="var(--info)"
+                defaultOpen={true}
+            >
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    padding: '1rem',
+                    background: 'var(--bg-subtle)',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1px solid var(--border-light)',
+                    marginBottom: '1rem'
+                }}>
+                    <div style={{
+                        width: '56px',
+                        height: '56px',
+                        borderRadius: 'var(--radius-full)',
+                        background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        fontWeight: 700,
+                        fontSize: 'var(--text-lg)'
+                    }}>
+                        {userProfile?.name?.charAt(0)?.toUpperCase() || 'U'}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                        <div style={{
+                            fontSize: 'var(--text-base)',
+                            fontWeight: 600,
+                            color: 'var(--text-main)'
+                        }}>
+                            {userProfile?.name || 'Loading...'}
+                        </div>
+                        <div style={{
+                            fontSize: 'var(--text-sm)',
+                            color: 'var(--text-muted)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.375rem',
+                            marginTop: '0.25rem'
+                        }}>
+                            <Phone size={14} />
+                            {userProfile?.phone || '---'}
+                        </div>
+                    </div>
+                </div>
+
+                {/* PIN Change & Logout */}
+                <div style={{ display: 'grid', gap: '0.75rem' }}>
+                    <button
+                        onClick={() => { playClickHaptic(); setShowPinModal(true); }}
+                        style={{
+                            width: '100%',
+                            padding: '0.875rem 1rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.75rem',
+                            background: 'var(--bg-subtle)',
+                            border: '1px solid var(--border-light)',
+                            borderRadius: 'var(--radius-lg)',
+                            cursor: 'pointer',
+                            textAlign: 'left'
+                        }}
+                    >
+                        <div style={{
+                            padding: '0.5rem',
+                            background: 'var(--warning-light)',
+                            borderRadius: 'var(--radius-md)',
+                            color: 'var(--warning)'
+                        }}>
+                            <Lock size={18} />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <div style={{
+                                fontSize: 'var(--text-sm)',
+                                fontWeight: 600,
+                                color: 'var(--text-main)'
+                            }}>
+                                Change PIN
+                            </div>
+                            <div style={{
+                                fontSize: 'var(--text-xs)',
+                                color: 'var(--text-muted)'
+                            }}>
+                                Update your login PIN
+                            </div>
+                        </div>
+                        <ChevronDown size={18} style={{ color: 'var(--text-muted)', transform: 'rotate(-90deg)' }} />
+                    </button>
+
+                    <button
+                        onClick={handleLogout}
+                        style={{
+                            width: '100%',
+                            padding: '0.875rem 1rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.75rem',
+                            background: 'var(--error-light)',
+                            border: '1px solid rgba(239, 68, 68, 0.15)',
+                            borderRadius: 'var(--radius-lg)',
+                            cursor: 'pointer',
+                            textAlign: 'left'
+                        }}
+                    >
+                        <div style={{
+                            padding: '0.5rem',
+                            background: 'white',
+                            borderRadius: 'var(--radius-md)',
+                            color: 'var(--error)'
+                        }}>
+                            <LogOut size={18} />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <div style={{
+                                fontSize: 'var(--text-sm)',
+                                fontWeight: 600,
+                                color: 'var(--error)'
+                            }}>
+                                Log Out
+                            </div>
+                            <div style={{
+                                fontSize: 'var(--text-xs)',
+                                color: 'var(--error)',
+                                opacity: 0.8
+                            }}>
+                                Sign out of your account
+                            </div>
+                        </div>
+                    </button>
+                </div>
+            </CollapsibleSection>
 
             {/* Appearance Section */}
             <CollapsibleSection
@@ -415,67 +827,32 @@ const SettingsPage: React.FC = () => {
                 iconColor="var(--primary)"
                 defaultOpen={true}
             >
-                <div style={{ display: 'grid', gap: '0.75rem' }}>
-                    {/* Theme Toggle */}
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '1rem',
-                        background: 'var(--bg-subtle)',
-                        borderRadius: 'var(--radius-lg)',
-                        border: '1px solid var(--border-light)'
-                    }}>
-                        <div>
-                            <div style={{
-                                fontSize: 'var(--text-sm)',
-                                fontWeight: 600,
-                                color: 'var(--text-main)',
-                                marginBottom: '0.25rem'
-                            }}>
-                                Theme
-                            </div>
-                            <div style={{
-                                fontSize: 'var(--text-xs)',
-                                color: 'var(--text-muted)'
-                            }}>
-                                Light, Dark or System
-                            </div>
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '1rem',
+                    background: 'var(--bg-subtle)',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1px solid var(--border-light)'
+                }}>
+                    <div>
+                        <div style={{
+                            fontSize: 'var(--text-sm)',
+                            fontWeight: 600,
+                            color: 'var(--text-main)',
+                            marginBottom: '0.25rem'
+                        }}>
+                            Theme
                         </div>
-                        <ThemeToggle />
-                    </div>
-
-                    {/* High Contrast Toggle */}
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '1rem',
-                        background: 'var(--bg-subtle)',
-                        borderRadius: 'var(--radius-lg)',
-                        border: '1px solid var(--border-light)'
-                    }}>
-                        <div>
-                            <div style={{
-                                fontSize: 'var(--text-sm)',
-                                fontWeight: 600,
-                                color: 'var(--text-main)',
-                                marginBottom: '0.25rem'
-                            }}>
-                                High Contrast Mode
-                            </div>
-                            <div style={{
-                                fontSize: 'var(--text-xs)',
-                                color: 'var(--text-muted)'
-                            }}>
-                                Better visibility in bright sunlight
-                            </div>
+                        <div style={{
+                            fontSize: 'var(--text-xs)',
+                            color: 'var(--text-muted)'
+                        }}>
+                            Light, Dark or System
                         </div>
-                        <ToggleSwitch
-                            checked={highContrast}
-                            onChange={setHighContrast}
-                        />
                     </div>
+                    <ThemeToggle />
                 </div>
             </CollapsibleSection>
 
@@ -725,7 +1102,46 @@ const SettingsPage: React.FC = () => {
                 </button>
             </CollapsibleSection>
 
-
+            {/* Appearance Settings */}
+            <CollapsibleSection
+                title="Appearance"
+                subtitle="Customize how the app looks"
+                icon={<Palette size={22} />}
+                iconBg="var(--warning-light)"
+                iconColor="var(--warning)"
+                defaultOpen={false}
+            >
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0.875rem 1rem',
+                    background: 'var(--bg-subtle)',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1px solid var(--border-light)'
+                }}>
+                    <div>
+                        <div style={{
+                            fontWeight: 600,
+                            color: 'var(--text-main)',
+                            fontSize: 'var(--text-sm)'
+                        }}>
+                            High Contrast Mode
+                        </div>
+                        <div style={{
+                            fontSize: 'var(--text-xs)',
+                            color: 'var(--text-muted)',
+                            marginTop: '0.125rem'
+                        }}>
+                            Better visibility in bright sunlight
+                        </div>
+                    </div>
+                    <ToggleSwitch
+                        checked={highContrast}
+                        onChange={setHighContrast}
+                    />
+                </div>
+            </CollapsibleSection>
 
             {/* Modals */}
             {editingMachine && (
@@ -736,6 +1152,12 @@ const SettingsPage: React.FC = () => {
                 />
             )}
 
+            {showPinModal && (
+                <PinChangeModal
+                    onClose={() => setShowPinModal(false)}
+                    onSave={handleUpdatePin}
+                />
+            )}
         </div>
     );
 };

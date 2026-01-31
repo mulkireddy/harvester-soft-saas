@@ -11,7 +11,7 @@ import toast from 'react-hot-toast';
 import JobHistoryModal from '../components/modals/JobHistoryModal';
 import JobCard from '../components/features/JobCard';
 import ReceiptModal from '../components/modals/ReceiptModal';
-
+import FloatingInput from '../components/common/FloatingInput';
 
 type BillingMode = 'acre' | 'hour';
 
@@ -837,48 +837,26 @@ const FarmersPage: React.FC = () => {
                                 gridTemplateColumns: '1fr 1fr',
                                 gap: '0.75rem'
                             }}>
-                                <FormField label="Mobile">
-                                    <input
-                                        type="tel"
-                                        value={mobile}
-                                        onChange={(e) => setMobile(e.target.value)}
-                                        placeholder="98765..."
-                                        maxLength={10}
-                                        style={{
-                                            width: '100%',
-                                            padding: '0.75rem 0.875rem',
-                                            fontSize: 'var(--text-base)',
-                                            border: '1px solid var(--border-light)',
-                                            borderRadius: 'var(--radius-lg)',
-                                            background: 'var(--bg-subtle)',
-                                            color: 'var(--text-main)'
-                                        }}
-                                    />
-                                </FormField>
+                                <FloatingInput
+                                    label="Mobile"
+                                    type="tel"
+                                    value={mobile}
+                                    onChange={(e) => setMobile(e.target.value)}
+                                    placeholder="98765..."
+                                    maxLength={10}
+                                />
 
-                                <div>
-                                    <FormField label="Village">
-                                        <input
-                                            type="text"
-                                            value={place}
-                                            onChange={(e) => setPlace(e.target.value)}
-                                            placeholder="Village Name"
-                                            list="village-options"
-                                            style={{
-                                                width: '100%',
-                                                padding: '0.75rem 0.875rem',
-                                                fontSize: 'var(--text-base)',
-                                                border: '1px solid var(--border-light)',
-                                                borderRadius: 'var(--radius-lg)',
-                                                background: 'var(--bg-subtle)',
-                                                color: 'var(--text-main)'
-                                            }}
-                                        />
-                                    </FormField>
-                                    <datalist id="village-options">
-                                        {allVillages.map((v, i) => <option key={i} value={v} />)}
-                                    </datalist>
-                                </div>
+                                <FloatingInput
+                                    label="Village"
+                                    type="text"
+                                    value={place}
+                                    onChange={(e) => setPlace(e.target.value)}
+                                    placeholder="Village Name"
+                                    list="village-options"
+                                />
+                                <datalist id="village-options">
+                                    {allVillages.map((v, i) => <option key={i} value={v} />)}
+                                </datalist>
                             </div>
                         </div>
 
@@ -905,40 +883,20 @@ const FarmersPage: React.FC = () => {
                                 gap: '0.75rem',
                                 marginBottom: '0.75rem'
                             }}>
-                                <FormField label="Crop">
-                                    <input
-                                        type="text"
-                                        value={crop}
-                                        onChange={(e) => setCrop(e.target.value)}
-                                        placeholder="Paddy, Wheat..."
-                                        style={{
-                                            width: '100%',
-                                            padding: '0.75rem 0.875rem',
-                                            fontSize: 'var(--text-base)',
-                                            border: '1px solid var(--border-light)',
-                                            borderRadius: 'var(--radius-lg)',
-                                            background: 'var(--bg-subtle)',
-                                            color: 'var(--text-main)'
-                                        }}
-                                    />
-                                </FormField>
+                                <FloatingInput
+                                    label="Crop"
+                                    type="text"
+                                    value={crop}
+                                    onChange={(e) => setCrop(e.target.value)}
+                                    placeholder="Paddy, Wheat..."
+                                />
 
-                                <FormField label="Date">
-                                    <input
-                                        type="date"
-                                        value={jobDate}
-                                        onChange={(e) => setJobDate(e.target.value)}
-                                        style={{
-                                            width: '100%',
-                                            padding: '0.75rem 0.875rem',
-                                            fontSize: 'var(--text-base)',
-                                            border: '1px solid var(--border-light)',
-                                            borderRadius: 'var(--radius-lg)',
-                                            background: 'var(--bg-subtle)',
-                                            color: 'var(--text-main)'
-                                        }}
-                                    />
-                                </FormField>
+                                <FloatingInput
+                                    label="Date"
+                                    type="date"
+                                    value={jobDate}
+                                    onChange={(e) => setJobDate(e.target.value)}
+                                />
                             </div>
 
                             {/* Machine Chips */}
@@ -1002,23 +960,14 @@ const FarmersPage: React.FC = () => {
                                     />
                                 </FormField>
 
-                                <FormField label="Rate (₹)" error={errors.rate}>
-                                    <input
-                                        type="number"
-                                        value={rate}
-                                        onChange={(e) => setRate(Number(e.target.value))}
-                                        placeholder="0"
-                                        style={{
-                                            width: '100%',
-                                            padding: '0.75rem 0.875rem',
-                                            fontSize: 'var(--text-base)',
-                                            border: errors.rate ? '2px solid var(--error)' : '1px solid var(--border-light)',
-                                            borderRadius: 'var(--radius-lg)',
-                                            background: 'var(--bg-subtle)',
-                                            color: 'var(--text-main)'
-                                        }}
-                                    />
-                                </FormField>
+                                <FloatingInput
+                                    label="Rate (₹)"
+                                    type="number"
+                                    value={rate}
+                                    onChange={(e) => setRate(Number(e.target.value))}
+                                    placeholder="0"
+                                    error={errors.rate}
+                                />
 
                                 <div style={{
                                     display: 'flex',
@@ -1235,102 +1184,46 @@ const FarmersPage: React.FC = () => {
                         textAlign: 'center',
                         background: 'var(--bg-card)',
                         borderRadius: 'var(--radius-xl)',
-                        border: '1px solid var(--border-light)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '1rem'
+                        border: '1px solid var(--border-light)'
                     }}>
                         <div style={{
-                            width: '64px',
-                            height: '64px',
-                            borderRadius: 'var(--radius-full)',
+                            marginBottom: '1rem',
+                            display: 'inline-flex',
+                            padding: '1.25rem',
                             background: 'var(--primary-light)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            marginBottom: '0.5rem'
+                            borderRadius: 'var(--radius-full)'
                         }}>
                             <Users size={32} style={{ color: 'var(--primary)' }} />
                         </div>
-                        <div>
-                            <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.25rem' }}>
-                                No harvest records yet
-                            </h3>
-                            <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
-                                Start by adding your first job entry
-                            </p>
-                        </div>
-                        <button
-                            onClick={() => { playClickHaptic(); setShowForm(true); }}
-                            className="btn-primary"
-                            style={{
-                                marginTop: '0.5rem',
-                                padding: '0.75rem 1.5rem',
-                                borderRadius: 'var(--radius-full)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                boxShadow: 'var(--shadow-primary)'
-                            }}
-                        >
-                            <Plus size={18} />
-                            Add First Job
-                        </button>
+                        <p style={{
+                            color: 'var(--text-muted)',
+                            fontSize: 'var(--text-sm)',
+                            marginBottom: '0.5rem'
+                        }}>
+                            No records yet
+                        </p>
+                        <p style={{
+                            color: 'var(--text-secondary)',
+                            fontSize: 'var(--text-xs)'
+                        }}>
+                            Tap the + button to add your first entry
+                        </p>
                     </div>
                 ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%' }}>
-                        {(() => {
-                            const groups: Record<string, any[]> = {};
-                            recentJobs.forEach(job => {
-                                const d = new Date(job.date);
-                                const today = new Date();
-                                const yesterday = new Date();
-                                yesterday.setDate(yesterday.getDate() - 1);
-
-                                let key = 'Older';
-                                if (d.toDateString() === today.toDateString()) key = 'Today';
-                                else if (d.toDateString() === yesterday.toDateString()) key = 'Yesterday';
-                                else if (d > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) key = 'This Week';
-
-                                if (!groups[key]) groups[key] = [];
-                                groups[key].push(job);
-                            });
-
-                            return ['Today', 'Yesterday', 'This Week', 'Older'].map(group => {
-                                if (!groups[group]) return null;
-                                return (
-                                    <div key={group} className="animate-fade-in">
-                                        <h4 style={{
-                                            fontSize: '0.75rem',
-                                            fontWeight: 700,
-                                            color: 'var(--text-muted)',
-                                            textTransform: 'uppercase',
-                                            letterSpacing: '0.05em',
-                                            marginBottom: '0.75rem',
-                                            paddingLeft: '0.25rem'
-                                        }}>
-                                            {group}
-                                        </h4>
-                                        <div style={{ display: 'grid', gap: '0.75rem' }}>
-                                            {groups[group].map(job => (
-                                                <div key={job.id} style={{ width: '100%' }}>
-                                                    <JobCard
-                                                        job={job}
-                                                        onShare={(j) => handleShare(j)}
-                                                        onEdit={(j) => { playClickHaptic(); setEditJob(j); }}
-                                                        onDelete={(id) => handleDelete(id)}
-                                                        onPay={(j) => { playClickHaptic(); setSelectedJob(j); }}
-                                                        onCall={(m) => handleCall(m)}
-                                                        onReceipt={(j) => { playClickHaptic(); setSelectedReceiptJob(j); }}
-                                                    />
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                );
-                            });
-                        })()}
+                    <div style={{ display: 'grid', gap: '1rem', width: '100%' }}>
+                        {recentJobs.map((job) => (
+                            <div key={job.id} style={{ width: '100%' }}>
+                                <JobCard
+                                    job={job}
+                                    onShare={(j) => handleShare(j)}
+                                    onEdit={(j) => { playClickHaptic(); setEditJob(j); }}
+                                    onDelete={(id) => handleDelete(id)}
+                                    onPay={(j) => { playClickHaptic(); setSelectedJob(j); }}
+                                    onCall={(m) => handleCall(m)}
+                                    onReceipt={(j) => { playClickHaptic(); setSelectedReceiptJob(j); }}
+                                />
+                            </div>
+                        ))}
                     </div>
                 )
             }

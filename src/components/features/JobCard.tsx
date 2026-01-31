@@ -299,7 +299,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, onShare, onEdit, onDelete, onPay
                         }}>
                             {job.billing_mode === 'acre' ? 'Acres' : 'Hours'}
                         </div>
-                        <div className="font-mono-num" style={{
+                        <div style={{
                             fontSize: 'var(--text-base)',
                             fontWeight: 700,
                             color: 'var(--text-main)'
@@ -322,7 +322,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, onShare, onEdit, onDelete, onPay
                         }}>
                             Rate
                         </div>
-                        <div className="font-mono-num" style={{
+                        <div style={{
                             fontSize: 'var(--text-base)',
                             fontWeight: 700,
                             color: 'var(--text-main)'
@@ -345,7 +345,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, onShare, onEdit, onDelete, onPay
                         }}>
                             Total
                         </div>
-                        <div className="font-mono-num" style={{
+                        <div style={{
                             fontSize: 'var(--text-base)',
                             fontWeight: 700,
                             color: 'var(--primary)'
@@ -371,7 +371,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, onShare, onEdit, onDelete, onPay
                         }}>
                             Balance
                         </div>
-                        <div className="font-mono-num" style={{
+                        <div style={{
                             fontSize: 'var(--text-sm)',
                             fontWeight: 700,
                             color: 'var(--error)'

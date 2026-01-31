@@ -222,14 +222,6 @@ const Login: React.FC = () => {
             });
 
             if (sbError) throw sbError;
-
-            // CRITICAL: If user logs in via OTP, we allow them to reset their PIN.
-            // We clear the existing PIN from metadata so PinLock.tsx switches to 'create' mode.
-            await supabase.auth.updateUser({
-                data: { pin: null }
-            });
-
-            if (sbError) throw sbError;
             playSuccessHaptic();
             toast.success('Welcome back!');
 
@@ -396,47 +388,59 @@ const Login: React.FC = () => {
                             }}>
                                 Mobile Number
                             </label>
-                            <div style={{ position: 'relative', flex: 1 }}>
+                            <div style={{
+                                display: 'flex',
+                                gap: '0.5rem'
+                            }}>
+                                {/* Country Code Selector */}
                                 <div style={{
-                                    position: 'absolute',
-                                    left: '14px',
-                                    top: '50%',
-                                    transform: 'translateY(-50%)',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '8px',
-                                    color: 'var(--text-muted)',
-                                    pointerEvents: 'none'
+                                    gap: '0.375rem',
+                                    padding: '0 1rem',
+                                    background: 'linear-gradient(135deg, #F0FDF4, #ECFDF5)',
+                                    border: '2px solid #BBF7D0',
+                                    borderRadius: 'var(--radius-lg)',
+                                    color: '#059669',
+                                    fontWeight: 700,
+                                    fontSize: '1rem',
+                                    minWidth: '90px',
+                                    justifyContent: 'center',
+                                    height: '52px'
                                 }}>
-                                    <Phone size={20} />
-                                    <span style={{
-                                        fontWeight: 600,
-                                        color: 'var(--text-secondary)',
-                                        paddingRight: '8px',
-                                        borderRight: '1px solid var(--border-light)'
-                                    }}>+91</span>
+                                    <span style={{ fontSize: '1.25rem' }}>🇮🇳</span>
+                                    {countryCode}
                                 </div>
-                                <input
-                                    type="tel"
-                                    className="input"
-                                    placeholder="98765 43210"
-                                    style={{
-                                        paddingLeft: '5.5rem',
-                                        width: '100%',
-                                        height: '52px',
-                                        fontSize: '1.25rem',
-                                        fontWeight: 600,
-                                        borderRadius: 'var(--radius-lg)',
-                                        border: '2px solid var(--border-light)',
-                                        transition: 'all 0.2s ease',
-                                        letterSpacing: '0.02em'
-                                    }}
-                                    value={mobile}
-                                    onChange={(e) => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                                    required
-                                    autoFocus
-                                    maxLength={10}
-                                />
+                                {/* Phone Input */}
+                                <div style={{ position: 'relative', flex: 1 }}>
+                                    <Phone size={20} style={{
+                                        position: 'absolute',
+                                        left: '14px',
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        color: 'var(--text-muted)'
+                                    }} />
+                                    <input
+                                        type="tel"
+                                        className="input"
+                                        placeholder="9876543210"
+                                        style={{
+                                            paddingLeft: '2.75rem',
+                                            width: '100%',
+                                            height: '52px',
+                                            fontSize: '1.1rem',
+                                            fontWeight: 600,
+                                            borderRadius: 'var(--radius-lg)',
+                                            border: '2px solid var(--border-light)',
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                        value={mobile}
+                                        onChange={(e) => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                                        required
+                                        autoFocus
+                                        maxLength={10}
+                                    />
+                                </div>
                             </div>
                         </div>
                     ) : (

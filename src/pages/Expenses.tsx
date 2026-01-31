@@ -792,243 +792,182 @@ const ExpensesPage: React.FC = () => {
                     textAlign: 'center',
                     background: 'var(--bg-card)',
                     borderRadius: 'var(--radius-xl)',
-                    border: '1px solid var(--border-light)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '1rem'
+                    border: '1px solid var(--border-light)'
                 }}>
                     <div style={{
-                        width: '64px',
-                        height: '64px',
-                        borderRadius: 'var(--radius-full)',
+                        marginBottom: '1rem',
+                        display: 'inline-flex',
+                        padding: '1.25rem',
                         background: 'var(--error-light)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginBottom: '0.5rem'
+                        borderRadius: 'var(--radius-full)'
                     }}>
                         <Receipt size={32} style={{ color: 'var(--error)' }} />
                     </div>
-                    <div>
-                        <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, color: 'var(--text-main)', marginBottom: '0.25rem' }}>
-                            No expenses yet
-                        </h3>
-                        <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
-                            Track your spending by adding an expense
-                        </p>
-                    </div>
-                    <button
-                        onClick={() => { playClickHaptic(); setShowForm(true); }}
-                        className="btn-primary" // Assuming you might want to add a red variant class or inline style if btn-primary is green
-                        style={{
-                            marginTop: '0.5rem',
-                            padding: '0.75rem 1.5rem',
-                            borderRadius: 'var(--radius-full)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            background: 'var(--error)',
-                            boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
-                            color: 'white',
-                            border: 'none',
-                            fontWeight: 600,
-                            cursor: 'pointer'
-                        }}
-                    >
-                        <Plus size={18} />
-                        Add First Expense
-                    </button>
+                    <p style={{
+                        color: 'var(--text-muted)',
+                        fontSize: 'var(--text-sm)',
+                        marginBottom: '0.5rem'
+                    }}>
+                        No expenses recorded yet
+                    </p>
+                    <p style={{
+                        color: 'var(--text-secondary)',
+                        fontSize: 'var(--text-xs)'
+                    }}>
+                        Tap the + button to add your first expense
+                    </p>
                 </div>
             ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%' }}>
-                    {(() => {
-                        const groups: Record<string, any[]> = {};
-                        recentExpenses.forEach(expense => {
-                            const d = new Date(expense.date);
-                            const today = new Date();
-                            const yesterday = new Date();
-                            yesterday.setDate(yesterday.getDate() - 1);
+                <div style={{ display: 'grid', gap: '0.75rem', width: '100%' }}>
+                    {recentExpenses.map(expense => {
+                        const CategoryData = CATEGORIES.find(c => c.id === expense.category) || CATEGORIES[5];
+                        const Icon = CategoryData.icon;
 
-                            let key = 'Older';
-                            if (d.toDateString() === today.toDateString()) key = 'Today';
-                            else if (d.toDateString() === yesterday.toDateString()) key = 'Yesterday';
-                            else if (d > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) key = 'This Week';
+                        return (
+                            <div key={expense.id} style={{
+                                background: 'var(--bg-card)',
+                                borderRadius: 'var(--radius-xl)',
+                                padding: '1rem',
+                                display: 'grid',
+                                gridTemplateColumns: '48px 1fr auto',
+                                alignItems: 'center',
+                                gap: '0.875rem',
+                                boxShadow: 'var(--shadow-xs)',
+                                border: '1px solid var(--border-light)',
+                                transition: 'all var(--transition-fast)'
+                            }}>
+                                {/* Category Icon - 48x48 for larger touch target */}
+                                <div style={{
+                                    width: '48px',
+                                    height: '48px',
+                                    borderRadius: 'var(--radius-lg)',
+                                    backgroundColor: CategoryData.color,
+                                    color: CategoryData.textColor,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0
+                                }}>
+                                    <Icon size={22} />
+                                </div>
 
-                            if (!groups[key]) groups[key] = [];
-                            groups[key].push(expense);
-                        });
-
-                        return ['Today', 'Yesterday', 'This Week', 'Older'].map(group => {
-                            if (!groups[group]) return null;
-                            return (
-                                <div key={group} className="animate-fade-in">
-                                    <h4 style={{
-                                        fontSize: '0.75rem',
-                                        fontWeight: 700,
-                                        color: 'var(--text-muted)',
-                                        textTransform: 'uppercase',
-                                        letterSpacing: '0.05em',
-                                        marginBottom: '0.75rem',
-                                        paddingLeft: '0.25rem'
+                                {/* Content */}
+                                <div style={{ minWidth: 0 }}>
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        marginBottom: '0.25rem'
                                     }}>
-                                        {group}
-                                    </h4>
-                                    <div style={{ display: 'grid', gap: '0.75rem' }}>
-                                        {groups[group].map(expense => {
-                                            const CategoryData = CATEGORIES.find(c => c.id === expense.category) || CATEGORIES[5];
-                                            const Icon = CategoryData.icon;
-
-                                            return (
-                                                <div key={expense.id} style={{
-                                                    background: 'var(--bg-card)',
-                                                    borderRadius: 'var(--radius-xl)',
-                                                    padding: '1rem',
-                                                    display: 'grid',
-                                                    gridTemplateColumns: '48px 1fr auto',
-                                                    alignItems: 'center',
-                                                    gap: '0.875rem',
-                                                    boxShadow: 'var(--shadow-xs)',
-                                                    border: '1px solid var(--border-light)',
-                                                    transition: 'all var(--transition-fast)'
+                                        <h4 style={{
+                                            fontSize: 'var(--text-sm)',
+                                            fontWeight: 600,
+                                            color: 'var(--text-main)',
+                                            margin: 0
+                                        }}>
+                                            {CategoryData.shortLabel}
+                                        </h4>
+                                        {expense.machines?.name && (
+                                            <span style={{
+                                                background: 'var(--secondary-light)',
+                                                color: 'var(--secondary)',
+                                                padding: '0.125rem 0.5rem',
+                                                borderRadius: 'var(--radius-sm)',
+                                                fontSize: '0.65rem',
+                                                fontWeight: 600
+                                            }}>
+                                                {expense.machines.name}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        fontSize: 'var(--text-xs)',
+                                        color: 'var(--text-muted)'
+                                    }}>
+                                        <span>
+                                            {new Date(expense.date).toLocaleDateString('en-IN', {
+                                                day: 'numeric',
+                                                month: 'short'
+                                            })}
+                                        </span>
+                                        {expense.description && (
+                                            <>
+                                                <span>•</span>
+                                                <span style={{
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap',
+                                                    maxWidth: '120px'
                                                 }}>
-                                                    {/* Category Icon */}
-                                                    <div style={{
-                                                        width: '48px',
-                                                        height: '48px',
-                                                        borderRadius: 'var(--radius-lg)',
-                                                        backgroundColor: CategoryData.color,
-                                                        color: CategoryData.textColor,
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        flexShrink: 0
-                                                    }}>
-                                                        <Icon size={22} />
-                                                    </div>
-
-                                                    {/* Content */}
-                                                    <div style={{ minWidth: 0 }}>
-                                                        <div style={{
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: '0.5rem',
-                                                            marginBottom: '0.25rem'
-                                                        }}>
-                                                            <h4 style={{
-                                                                fontSize: 'var(--text-sm)',
-                                                                fontWeight: 600,
-                                                                color: 'var(--text-main)',
-                                                                margin: 0
-                                                            }}>
-                                                                {CategoryData.shortLabel}
-                                                            </h4>
-                                                            {expense.machines?.name && (
-                                                                <span style={{
-                                                                    background: 'var(--secondary-light)',
-                                                                    color: 'var(--secondary)',
-                                                                    padding: '0.125rem 0.5rem',
-                                                                    borderRadius: 'var(--radius-sm)',
-                                                                    fontSize: '0.65rem',
-                                                                    fontWeight: 600
-                                                                }}>
-                                                                    {expense.machines.name}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        <div style={{
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: '0.5rem',
-                                                            fontSize: 'var(--text-xs)',
-                                                            color: 'var(--text-muted)'
-                                                        }}>
-                                                            <span>
-                                                                {new Date(expense.date).toLocaleDateString('en-IN', {
-                                                                    day: 'numeric',
-                                                                    month: 'short'
-                                                                })}
-                                                            </span>
-                                                            {expense.description && (
-                                                                <>
-                                                                    <span>•</span>
-                                                                    <span style={{
-                                                                        overflow: 'hidden',
-                                                                        textOverflow: 'ellipsis',
-                                                                        whiteSpace: 'nowrap',
-                                                                        maxWidth: '120px'
-                                                                    }}>
-                                                                        {expense.description}
-                                                                    </span>
-                                                                </>
-                                                            )}
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Amount & Actions */}
-                                                    <div style={{
-                                                        textAlign: 'right',
-                                                        display: 'flex',
-                                                        flexDirection: 'column',
-                                                        alignItems: 'flex-end',
-                                                        gap: '0.375rem'
-                                                    }}>
-                                                        <div className="font-mono-num" style={{
-                                                            fontSize: 'var(--text-base)',
-                                                            fontWeight: 700,
-                                                            color: 'var(--error)'
-                                                        }}>
-                                                            -₹{expense.amount.toLocaleString('en-IN')}
-                                                        </div>
-                                                        <div style={{ display: 'flex', gap: '0.375rem' }}>
-                                                            <button
-                                                                onClick={() => { playClickHaptic(); setEditExpense(expense); }}
-                                                                style={{
-                                                                    padding: '0.375rem',
-                                                                    width: '32px',
-                                                                    height: '32px',
-                                                                    background: 'var(--info-light)',
-                                                                    color: 'var(--info)',
-                                                                    borderRadius: 'var(--radius-md)',
-                                                                    border: 'none',
-                                                                    cursor: 'pointer',
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    justifyContent: 'center',
-                                                                    transition: 'all var(--transition-fast)'
-                                                                }}
-                                                            >
-                                                                <Edit size={14} />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleDelete(expense.id)}
-                                                                style={{
-                                                                    padding: '0.375rem',
-                                                                    width: '32px',
-                                                                    height: '32px',
-                                                                    background: 'var(--error-light)',
-                                                                    color: 'var(--error)',
-                                                                    borderRadius: 'var(--radius-md)',
-                                                                    border: 'none',
-                                                                    cursor: 'pointer',
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    justifyContent: 'center',
-                                                                    transition: 'all var(--transition-fast)'
-                                                                }}
-                                                            >
-                                                                <Trash2 size={14} />
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
+                                                    {expense.description}
+                                                </span>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
-                            );
-                        })
-                    })()}
+
+                                {/* Amount & Actions */}
+                                <div style={{
+                                    textAlign: 'right',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'flex-end',
+                                    gap: '0.375rem'
+                                }}>
+                                    <div style={{
+                                        fontSize: 'var(--text-base)',
+                                        fontWeight: 700,
+                                        color: 'var(--error)'
+                                    }}>
+                                        -₹{expense.amount.toLocaleString('en-IN')}
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '0.375rem' }}>
+                                        <button
+                                            onClick={() => { playClickHaptic(); setEditExpense(expense); }}
+                                            style={{
+                                                padding: '0.375rem',
+                                                width: '32px',
+                                                height: '32px',
+                                                background: 'var(--info-light)',
+                                                color: 'var(--info)',
+                                                borderRadius: 'var(--radius-md)',
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                transition: 'all var(--transition-fast)'
+                                            }}
+                                        >
+                                            <Edit size={14} />
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(expense.id)}
+                                            style={{
+                                                padding: '0.375rem',
+                                                width: '32px',
+                                                height: '32px',
+                                                background: 'var(--error-light)',
+                                                color: 'var(--error)',
+                                                borderRadius: 'var(--radius-md)',
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                transition: 'all var(--transition-fast)'
+                                            }}
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             )}
 

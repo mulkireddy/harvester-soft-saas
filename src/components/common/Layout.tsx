@@ -7,8 +7,6 @@ import NotificationBadge from './NotificationBadge';
 import { Toaster } from 'react-hot-toast';
 import { playClickHaptic } from '../../lib/ui-utils';
 
-import ProfileModal from '../modals/ProfileModal';
-
 interface LayoutProps {
     children: ReactNode;
 }
@@ -30,7 +28,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     const location = useLocation();
     const [userInitials, setUserInitials] = useState('');
     const [notificationCount] = useState(0); // For future notifications
-    const [showProfileModal, setShowProfileModal] = useState(false);
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -140,8 +137,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
                     {/* User Avatar with Initials */}
                     <button
-                        onClick={() => { playClickHaptic(); setShowProfileModal(true); }}
-                        aria-label="User menu"
+                        onClick={handleLogout}
+                        aria-label="User menu - tap to logout"
                         className="icon-btn-enhanced"
                         style={{
                             width: '44px',
@@ -159,19 +156,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                             transition: 'all var(--transition-fast)',
                             boxShadow: '0 2px 8px rgba(102, 126, 234, 0.25)'
                         }}
+                        title="Tap to logout"
                     >
                         {userInitials || <User size={18} aria-hidden="true" />}
                     </button>
                 </div>
             </header>
-
-            {/* Profile Modal */}
-            {showProfileModal && (
-                <ProfileModal
-                    onClose={() => setShowProfileModal(false)}
-                    onLogout={handleLogout}
-                />
-            )}
 
             {/* Main Content Area */}
             <main id="main-content" className="main-content page-enter" role="main">
