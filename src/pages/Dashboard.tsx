@@ -225,15 +225,19 @@ const Dashboard: React.FC = () => {
 
     return (
         <div className="animate-fade-in">
-            {/* Header with Greeting and Date */}
-            <header style={{ marginBottom: '1.5rem' }}>
+            {/* Premium Header Background */}
+            <div className="premium-header-bg" />
+
+            {/* Header with Greeting */}
+            <header style={{ marginBottom: '1.5rem', position: 'relative' }}>
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.5rem',
-                    color: 'var(--text-muted)',
+                    color: 'var(--text-secondary)',
                     fontSize: 'var(--text-sm)',
-                    marginBottom: '0.375rem'
+                    marginBottom: '0.25rem',
+                    fontWeight: 500
                 }}>
                     <Calendar size={14} />
                     {new Date().toLocaleDateString('en-IN', {
@@ -243,302 +247,190 @@ const Dashboard: React.FC = () => {
                         year: 'numeric'
                     })}
                 </div>
-                <h1 style={{
-                    fontSize: 'var(--text-2xl)',
+                <h1 className="font-serif" style={{
+                    fontSize: 'var(--text-3xl)',
                     fontWeight: 700,
                     color: 'var(--text-main)',
-                    letterSpacing: '-0.02em'
+                    letterSpacing: '-0.02em',
+                    marginBottom: '0.5rem'
                 }}>
-                    {greeting}{userName ? `, ${userName}` : ''} 👋
+                    {greeting}{userName ? `, ${userName}` : ''}
                 </h1>
             </header>
 
-            {/* Today's Summary Section */}
-            <div style={{
-                background: 'var(--bg-card)',
-                borderRadius: 'var(--radius-xl)',
-                padding: '1rem 1.25rem',
-                marginBottom: '1.25rem',
-                border: '1px solid var(--border-light)',
-                boxShadow: 'var(--shadow-xs)'
-            }}>
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    marginBottom: '0.75rem'
+            {/* Bento Grid Layout */}
+            <div className="bento-grid" style={{ marginBottom: '2rem' }}>
+
+                {/* 1. Today's Progress (Span 12) */}
+                <div className="bento-item bento-span-12" style={{
+                    background: 'linear-gradient(135deg, var(--bg-card) 0%, #FAFAFA 100%)',
+                    padding: '1.25rem'
                 }}>
-                    <Clock size={14} style={{ color: 'var(--primary)' }} />
-                    <span style={{
-                        fontSize: 'var(--text-xs)',
-                        fontWeight: 600,
-                        color: 'var(--text-muted)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em'
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginBottom: '1rem'
                     }}>
-                        Today's Progress
-                    </span>
-                </div>
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(3, 1fr)',
-                    gap: '1rem'
-                }}>
-                    {[
-                        { label: 'Acres', value: todaySummary.acres.toFixed(1), icon: Wheat, color: 'var(--primary)' },
-                        { label: 'Jobs', value: todaySummary.jobs, icon: ChevronRight, color: 'var(--info)' },
-                        { label: 'Earned', value: formatCurrency(todaySummary.earnings), icon: DollarSign, color: 'var(--success)' }
-                    ].map((item, i) => (
-                        <div key={i} style={{ textAlign: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <div style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                width: '32px',
-                                height: '32px',
-                                borderRadius: 'var(--radius-md)',
-                                background: `${item.color}15`,
-                                marginBottom: '0.375rem'
+                                padding: '0.4rem',
+                                background: 'rgba(5, 150, 105, 0.1)',
+                                borderRadius: '8px',
+                                color: 'var(--primary)'
                             }}>
-                                <item.icon size={16} style={{ color: item.color }} />
+                                <Clock size={16} />
                             </div>
-                            <div style={{
-                                fontSize: 'var(--text-lg)',
+                            <span style={{
+                                fontSize: 'var(--text-sm)',
                                 fontWeight: 700,
                                 color: 'var(--text-main)',
-                                lineHeight: 1.2
+                                letterSpacing: '0.01em'
                             }}>
-                                {loading ? <Skeleton width={40} /> : item.value}
-                            </div>
-                            <div style={{
-                                fontSize: '0.65rem',
-                                color: 'var(--text-muted)',
-                                fontWeight: 500
-                            }}>
-                                {item.label}
-                            </div>
+                                TODAY'S PULSE
+                            </span>
                         </div>
-                    ))}
-                </div>
-            </div>
+                    </div>
 
-            {/* Simplified 2-Card Hero: Revenue + Profit with Trends */}
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: '0.875rem',
-                marginBottom: '1.25rem'
-            }}>
-                {/* Revenue Card */}
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(3, 1fr)',
+                        gap: '1rem'
+                    }}>
+                        {[
+                            { label: 'Acres', value: todaySummary.acres.toFixed(1), icon: Wheat, color: 'var(--primary)' },
+                            { label: 'Jobs', value: todaySummary.jobs, icon: ChevronRight, color: 'var(--info)' },
+                            { label: 'Earned', value: formatCurrency(todaySummary.earnings), icon: DollarSign, color: 'var(--success)' }
+                        ].map((item, i) => (
+                            <div key={i} style={{ textAlign: 'center' }}>
+                                <div className="font-mono-num" style={{
+                                    fontSize: '1.5rem',
+                                    fontWeight: 700,
+                                    color: 'var(--text-main)',
+                                    lineHeight: 1.1,
+                                    marginBottom: '0.125rem'
+                                }}>
+                                    {loading ? <Skeleton width={40} /> : item.value}
+                                </div>
+                                <div style={{
+                                    fontSize: '0.7rem',
+                                    color: 'var(--text-muted)',
+                                    fontWeight: 600,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em'
+                                }}>
+                                    {item.label}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* 2. Revenue Card (Span 6) */}
                 <div
+                    className="bento-item bento-span-6 animate-scale-in"
                     onClick={() => { playClickHaptic(); navigate('/reports'); }}
-                    className="animate-scale-in card-lift"
                     role="button"
                     tabIndex={0}
-                    aria-label="View revenue reports"
-                    onKeyDown={(e) => e.key === 'Enter' && navigate('/reports')}
-                    style={{
-                        padding: '1.25rem',
-                        borderRadius: 'var(--radius-xl)',
-                        background: 'var(--bg-card)',
-                        border: '1px solid var(--border-light)',
-                        boxShadow: 'var(--shadow-card)',
-                        cursor: 'pointer',
-                        transition: 'all var(--transition-fast)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.875rem'
-                    }}
+                    style={{ cursor: 'pointer', background: 'var(--bg-card)' }}
                 >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
                         <div style={{
-                            width: '40px',
-                            height: '40px',
-                            borderRadius: 'var(--radius-lg)',
+                            width: '36px', height: '36px',
+                            borderRadius: '10px',
                             background: 'rgba(5, 150, 105, 0.1)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
+                            display: 'flex', alignItems: 'center', justifyContent: 'center'
                         }}>
-                            <Wallet size={20} style={{ color: 'var(--primary)' }} />
+                            <Wallet size={18} style={{ color: 'var(--primary)' }} />
                         </div>
                         <TrendIndicator value={trends.revenueChange} />
                     </div>
-                    <div>
-                        <div style={{
-                            fontSize: 'var(--text-xs)',
-                            color: 'var(--text-muted)',
-                            fontWeight: 500,
-                            marginBottom: '0.25rem'
-                        }}>
-                            Total Revenue
-                        </div>
-                        <div style={{
-                            fontSize: '1.5rem',
-                            fontWeight: 700,
-                            color: 'var(--text-main)',
-                            letterSpacing: '-0.02em'
-                        }}>
+                    <div style={{ marginTop: 'auto' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '0.125rem' }}>REVENUE</div>
+                        <div className="font-mono-num" style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-main)' }}>
                             {loading ? <Skeleton width={80} /> : formatCurrency(stats.totalRevenue)}
                         </div>
                     </div>
                 </div>
 
-                {/* Profit Card */}
+                {/* 3. Profit Card (Span 6) */}
                 <div
+                    className="bento-item bento-span-6 animate-scale-in"
                     onClick={() => { playClickHaptic(); navigate('/reports'); }}
-                    className="animate-scale-in card-lift"
                     role="button"
                     tabIndex={0}
-                    aria-label="View profit reports"
-                    onKeyDown={(e) => e.key === 'Enter' && navigate('/reports')}
-                    style={{
-                        padding: '1.25rem',
-                        borderRadius: 'var(--radius-xl)',
-                        background: 'var(--bg-card)',
-                        border: '1px solid var(--border-light)',
-                        boxShadow: 'var(--shadow-card)',
-                        cursor: 'pointer',
-                        transition: 'all var(--transition-fast)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.875rem',
-                        animationDelay: '50ms'
-                    }}
+                    style={{ cursor: 'pointer', animationDelay: '50ms' }}
                 >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
                         <div style={{
-                            width: '40px',
-                            height: '40px',
-                            borderRadius: 'var(--radius-lg)',
+                            width: '36px', height: '36px',
+                            borderRadius: '10px',
                             background: 'rgba(59, 130, 246, 0.1)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
+                            display: 'flex', alignItems: 'center', justifyContent: 'center'
                         }}>
-                            <TrendingUp size={20} style={{ color: 'var(--info)' }} />
+                            <TrendingUp size={18} style={{ color: 'var(--info)' }} />
                         </div>
                         <TrendIndicator value={trends.profitChange} />
                     </div>
-                    <div>
-                        <div style={{
-                            fontSize: 'var(--text-xs)',
-                            color: 'var(--text-muted)',
-                            fontWeight: 500,
-                            marginBottom: '0.25rem'
-                        }}>
-                            Net Profit
-                        </div>
-                        <div style={{
-                            fontSize: '1.5rem',
-                            fontWeight: 700,
-                            color: stats.netProfit >= 0 ? 'var(--success)' : 'var(--error)',
-                            letterSpacing: '-0.02em'
+                    <div style={{ marginTop: 'auto' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '0.125rem' }}>PROFIT</div>
+                        <div className="font-mono-num" style={{
+                            fontSize: '1.5rem', fontWeight: 700,
+                            color: stats.netProfit >= 0 ? 'var(--success)' : 'var(--error)'
                         }}>
                             {loading ? <Skeleton width={80} /> : formatCurrency(stats.netProfit)}
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Secondary Stats Row: Expenses + Pending */}
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: '0.75rem',
-                marginBottom: '1.5rem'
-            }}>
-                {/* Expenses Mini Card */}
+                {/* 4. Expenses (Span 6) */}
                 <div
+                    className="bento-item bento-span-6"
                     onClick={() => { playClickHaptic(); navigate('/expenses'); }}
-                    style={{
-                        padding: '0.875rem 1rem',
-                        borderRadius: 'var(--radius-lg)',
-                        background: 'var(--bg-card)',
-                        border: '1px solid var(--border-light)',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.75rem',
-                        transition: 'all var(--transition-fast)'
-                    }}
+                    role="button"
+                    style={{ cursor: 'pointer', padding: '1rem' }}
                 >
-                    <div style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: 'var(--radius-md)',
-                        background: 'rgba(239, 68, 68, 0.1)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                    }}>
-                        <TrendingDown size={18} style={{ color: 'var(--error)' }} />
-                    </div>
-                    <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <div style={{
-                            fontSize: '0.65rem',
-                            color: 'var(--text-muted)',
-                            fontWeight: 500,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.03em'
+                            width: '32px', height: '32px', borderRadius: '8px',
+                            background: 'rgba(239, 68, 68, 0.1)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center'
                         }}>
-                            Expenses
+                            <TrendingDown size={16} style={{ color: 'var(--error)' }} />
                         </div>
-                        <div style={{
-                            fontSize: 'var(--text-base)',
-                            fontWeight: 700,
-                            color: 'var(--error)'
-                        }}>
-                            {loading ? <Skeleton width={60} /> : formatCurrency(stats.totalExpenses)}
+                        <div>
+                            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>EXPENSES</div>
+                            <div className="font-mono-num" style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--error)' }}>
+                                {loading ? <Skeleton width={60} /> : formatCurrency(stats.totalExpenses)}
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Pending Mini Card */}
+                {/* 5. Pending (Span 6) */}
                 <div
+                    className="bento-item bento-span-6"
                     onClick={() => { playClickHaptic(); navigate('/farmers'); }}
-                    style={{
-                        padding: '0.875rem 1rem',
-                        borderRadius: 'var(--radius-lg)',
-                        background: 'var(--bg-card)',
-                        border: '1px solid var(--border-light)',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.75rem',
-                        transition: 'all var(--transition-fast)'
-                    }}
+                    role="button"
+                    style={{ cursor: 'pointer', padding: '1rem' }}
                 >
-                    <div style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: 'var(--radius-md)',
-                        background: 'rgba(245, 158, 11, 0.1)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                    }}>
-                        <Clock size={18} style={{ color: 'var(--warning)' }} />
-                    </div>
-                    <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <div style={{
-                            fontSize: '0.65rem',
-                            color: 'var(--text-muted)',
-                            fontWeight: 500,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.03em'
+                            width: '32px', height: '32px', borderRadius: '8px',
+                            background: 'rgba(245, 158, 11, 0.1)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center'
                         }}>
-                            Pending
+                            <Clock size={16} style={{ color: 'var(--warning)' }} />
                         </div>
-                        <div style={{
-                            fontSize: 'var(--text-base)',
-                            fontWeight: 700,
-                            color: 'var(--warning)'
-                        }}>
-                            {loading ? <Skeleton width={60} /> : formatCurrency(stats.pendingDues)}
+                        <div>
+                            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>PENDING</div>
+                            <div className="font-mono-num" style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--warning)' }}>
+                                {loading ? <Skeleton width={60} /> : formatCurrency(stats.pendingDues)}
+                            </div>
                         </div>
                     </div>
                 </div>
+
             </div>
 
             {/* Analytics Section */}
